@@ -79,75 +79,105 @@ export default function BusinessRegistrationForm() {
   return (
     <div className="min-h-screen bg-background">
       <header className="bg-card border-b border-border shadow-sm">
-        <div className="max-w-4xl mx-auto px-6 py-8">
-          <div className="flex items-center space-x-4">
-            <div className="w-14 h-14 bg-primary rounded-lg flex items-center justify-center shadow-md">
-              <Building2 className="h-7 w-7 text-primary-foreground" />
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 py-4 sm:py-8">
+          <div className="flex items-center space-x-3 sm:space-x-4">
+            <div className="w-10 h-10 sm:w-14 sm:h-14 bg-primary rounded-lg flex items-center justify-center shadow-md">
+              <Building2 className="h-5 w-5 sm:h-7 sm:w-7 text-primary-foreground" />
             </div>
             <div>
-              <h1 className="text-4xl font-serif font-bold text-foreground">BIZDOC CONSULT</h1>
-              <p className="text-muted-foreground font-medium">Professional Business Registration Services</p>
+              <h1 className="text-2xl sm:text-4xl font-serif font-bold text-foreground">BIZDOC CONSULT</h1>
+              <p className="text-sm sm:text-base text-muted-foreground font-medium">
+                Professional Business Registration Services
+              </p>
             </div>
           </div>
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto px-6 py-8">
+      <main className="max-w-4xl mx-auto px-4 sm:px-6 py-4 sm:py-8">
         {currentStep === 0 && (
           <Card className="card-enhanced">
-            <CardHeader className="text-center pb-8">
-              <CardTitle className="text-4xl font-serif font-bold text-primary mb-6">
+            <CardHeader className="text-center pb-6 sm:pb-8">
+              <CardTitle className="text-2xl sm:text-4xl font-serif font-bold text-primary mb-4 sm:mb-6">
                 Business Registration Requirements Form
               </CardTitle>
-              <div className="max-w-2xl mx-auto space-y-6 text-muted-foreground">
-                <p className="text-lg leading-relaxed">
+              <div className="max-w-2xl mx-auto space-y-4 sm:space-y-6 text-muted-foreground">
+                <p className="text-base sm:text-lg leading-relaxed">
                   Welcome! This form is designed to help us collect the necessary information and documents required for
                   your business registration with BIZDOC CONSULT. Please select the type of registration you want to
                   apply for, then provide the requested details.
                 </p>
-                <div className="flex items-center justify-center space-x-3 text-sm bg-secondary border border-primary/20 p-4 rounded-lg">
-                  <Shield className="h-5 w-5 text-primary" />
+                <div className="flex items-center justify-center space-x-3 text-sm bg-secondary border border-primary/20 p-3 sm:p-4 rounded-lg">
+                  <Shield className="h-4 w-4 sm:h-5 sm:w-5 text-primary flex-shrink-0" />
                   <span className="font-medium text-secondary-foreground">
                     All information you share is kept strictly confidential and used only for your registration process.
                   </span>
                 </div>
-                <p className="font-bold text-lg text-foreground">Choose your registration type below to get started.</p>
+                <p className="font-bold text-base sm:text-lg text-foreground">
+                  Choose your registration type below to get started.
+                </p>
               </div>
             </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent className="space-y-4 sm:space-y-6">
               <RadioGroup
                 value={formData.registrationType}
                 onValueChange={(value) => updateFormData("registrationType", value as "bn" | "company")}
-                className="space-y-4"
+                className="space-y-3 sm:space-y-4"
               >
-                <div className="flex items-center space-x-4 p-6 border-2 border-border rounded-lg hover:border-primary/50 hover:bg-secondary/50 transition-all duration-200 shadow-sm">
-                  <RadioGroupItem value="bn" id="bn" />
-                  <div className="flex-1">
-                    <Label htmlFor="bn" className="text-xl font-bold cursor-pointer text-foreground">
-                      Business Name (BN)
-                    </Label>
-                    <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
-                      Register a business name for sole proprietorship or partnership
-                    </p>
+                <div
+                  className={`cursor-pointer p-4 sm:p-6 border-2 rounded-lg transition-all duration-200 shadow-sm ${
+                    formData.registrationType === "bn"
+                      ? "border-primary bg-primary/10 shadow-md"
+                      : "border-border hover:border-primary/50 hover:bg-secondary/50"
+                  }`}
+                  onClick={() => updateFormData("registrationType", "bn")}
+                >
+                  <div className="flex items-start space-x-3 sm:space-x-4">
+                    <RadioGroupItem value="bn" id="bn" className="mt-1" />
+                    <div className="flex-1 min-w-0">
+                      <Label htmlFor="bn" className="text-lg sm:text-xl font-bold cursor-pointer text-foreground block">
+                        Business Name (BN)
+                      </Label>
+                      <p className="text-sm text-muted-foreground mt-1 sm:mt-2 leading-relaxed">
+                        Register a business name for sole proprietorship or partnership
+                      </p>
+                    </div>
                   </div>
                 </div>
-                <div className="flex items-center space-x-4 p-6 border-2 border-border rounded-lg hover:border-primary/50 hover:bg-secondary/50 transition-all duration-200 shadow-sm">
-                  <RadioGroupItem value="company" id="company" />
-                  <div className="flex-1">
-                    <Label htmlFor="company" className="text-xl font-bold cursor-pointer text-foreground">
-                      Company Limited
-                    </Label>
-                    <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
-                      Incorporate a limited liability company with shareholders and directors
-                    </p>
+
+                <div
+                  className={`cursor-pointer p-4 sm:p-6 border-2 rounded-lg transition-all duration-200 shadow-sm ${
+                    formData.registrationType === "company"
+                      ? "border-primary bg-primary/10 shadow-md"
+                      : "border-border hover:border-primary/50 hover:bg-secondary/50"
+                  }`}
+                  onClick={() => updateFormData("registrationType", "company")}
+                >
+                  <div className="flex items-start space-x-3 sm:space-x-4">
+                    <RadioGroupItem value="company" id="company" className="mt-1" />
+                    <div className="flex-1 min-w-0">
+                      <Label
+                        htmlFor="company"
+                        className="text-lg sm:text-xl font-bold cursor-pointer text-foreground block"
+                      >
+                        Company Limited
+                      </Label>
+                      <p className="text-sm text-muted-foreground mt-1 sm:mt-2 leading-relaxed">
+                        Incorporate a limited liability company with shareholders and directors
+                      </p>
+                    </div>
                   </div>
                 </div>
               </RadioGroup>
 
-              <div className="flex justify-end pt-6">
-                <Button onClick={nextStep} disabled={!formData.registrationType} className="submit-button">
+              <div className="flex justify-end pt-4 sm:pt-6">
+                <Button
+                  onClick={nextStep}
+                  disabled={!formData.registrationType}
+                  className="submit-button w-full sm:w-auto"
+                >
                   Get Started
-                  <ChevronRight className="ml-2 h-5 w-5" />
+                  <ChevronRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />
                 </Button>
               </div>
             </CardContent>
@@ -159,11 +189,11 @@ export default function BusinessRegistrationForm() {
             <ProgressTracker currentStep={currentStep} totalSteps={steps.length} steps={steps} />
 
             {currentStep === 1 && (
-              <div className="space-y-8">
+              <div className="space-y-6 sm:space-y-8">
                 {/* Proposed Business Names Section */}
                 <div className="form-section">
                   <h3 className="section-title">Proposed Business Names</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                     <div>
                       <label className="form-label">Proposed Name 1</label>
                       <input
@@ -190,7 +220,7 @@ export default function BusinessRegistrationForm() {
                 {/* Business Contact Information Section */}
                 <div className="form-section">
                   <h3 className="section-title">Business Contact Information</h3>
-                  <div className="space-y-6">
+                  <div className="space-y-4 sm:space-y-6">
                     <div>
                       <label className="form-label">Business Address</label>
                       <input
@@ -201,7 +231,7 @@ export default function BusinessRegistrationForm() {
                         placeholder="Enter complete business address"
                       />
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                       <div>
                         <label className="form-label">Email Address</label>
                         <input
@@ -230,7 +260,7 @@ export default function BusinessRegistrationForm() {
                 {formData.registrationType === "company" && (
                   <div className="form-section">
                     <h3 className="section-title">Shares & Allotment</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                       <div>
                         <label className="form-label">Total Shares</label>
                         <input
@@ -263,7 +293,7 @@ export default function BusinessRegistrationForm() {
                   <>
                     <div className="form-section">
                       <h3 className="section-title">Director Information</h3>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                         <div>
                           <label className="form-label">Director Name</label>
                           <input
@@ -299,7 +329,7 @@ export default function BusinessRegistrationForm() {
 
                     <div className="form-section">
                       <h3 className="section-title">Required Documents</h3>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                         <FileUpload
                           label="Passport Photograph"
                           accept="image/*"
@@ -330,12 +360,12 @@ export default function BusinessRegistrationForm() {
                   </div>
                 </div>
 
-                <div className="flex justify-between pt-6">
-                  <Button onClick={prevStep} variant="outline" className="px-6 py-3 bg-transparent">
+                <div className="flex flex-col sm:flex-row justify-between gap-3 sm:gap-0 pt-4 sm:pt-6">
+                  <Button onClick={prevStep} variant="outline" className="px-6 py-3 bg-transparent order-2 sm:order-1">
                     <ChevronLeft className="mr-2 h-4 w-4" />
                     Back
                   </Button>
-                  <Button onClick={nextStep} className="submit-button">
+                  <Button onClick={nextStep} className="submit-button order-1 sm:order-2">
                     Continue
                     <ChevronRight className="ml-2 h-4 w-4" />
                   </Button>
@@ -348,7 +378,7 @@ export default function BusinessRegistrationForm() {
                 <CardHeader>
                   <CardTitle className="section-title">Directors & Shareholders</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-8">
+                <CardContent className="space-y-6 sm:space-y-8">
                   <DynamicPersonForm
                     title="Particulars of Directors"
                     type="director"
@@ -364,12 +394,16 @@ export default function BusinessRegistrationForm() {
                     totalShares={formData.totalShares}
                   />
 
-                  <div className="flex justify-between pt-6">
-                    <Button onClick={prevStep} variant="outline" className="px-6 py-3 bg-transparent">
+                  <div className="flex flex-col sm:flex-row justify-between gap-3 sm:gap-0 pt-4 sm:pt-6">
+                    <Button
+                      onClick={prevStep}
+                      variant="outline"
+                      className="px-6 py-3 bg-transparent order-2 sm:order-1"
+                    >
                       <ChevronLeft className="mr-2 h-4 w-4" />
                       Back
                     </Button>
-                    <Button onClick={nextStep} className="submit-button">
+                    <Button onClick={nextStep} className="submit-button order-1 sm:order-2">
                       Review Application
                       <ChevronRight className="ml-2 h-4 w-4" />
                     </Button>
@@ -387,10 +421,10 @@ export default function BusinessRegistrationForm() {
                     Please review your information before submitting your application.
                   </p>
                 </CardHeader>
-                <CardContent className="space-y-8">
+                <CardContent className="space-y-6 sm:space-y-8">
                   <div className="form-section">
                     <h3 className="section-title">Application Summary</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 text-sm">
                       <div>
                         <span className="font-medium text-foreground">Registration Type:</span>
                         <p className="text-muted-foreground mt-1">
@@ -412,11 +446,11 @@ export default function BusinessRegistrationForm() {
                     </div>
                   </div>
 
-                  <div className="bg-secondary border border-primary/30 p-6 rounded-lg">
+                  <div className="bg-secondary border border-primary/30 p-4 sm:p-6 rounded-lg">
                     <div className="flex items-start space-x-3">
-                      <Shield className="h-6 w-6 text-primary mt-0.5" />
+                      <Shield className="h-5 w-5 sm:h-6 sm:w-6 text-primary mt-0.5 flex-shrink-0" />
                       <div className="text-sm">
-                        <p className="font-bold text-lg text-primary mb-2">Data Security & Privacy</p>
+                        <p className="font-bold text-base sm:text-lg text-primary mb-2">Data Security & Privacy</p>
                         <p className="text-secondary-foreground leading-relaxed">
                           Your information is encrypted and stored securely. We comply with all data protection
                           regulations and will only use your information for business registration purposes.
@@ -425,12 +459,16 @@ export default function BusinessRegistrationForm() {
                     </div>
                   </div>
 
-                  <div className="flex justify-between pt-6">
-                    <Button onClick={prevStep} variant="outline" className="px-6 py-3 bg-transparent">
+                  <div className="flex flex-col sm:flex-row justify-between gap-3 sm:gap-0 pt-4 sm:pt-6">
+                    <Button
+                      onClick={prevStep}
+                      variant="outline"
+                      className="px-6 py-3 bg-transparent order-2 sm:order-1"
+                    >
                       <ChevronLeft className="mr-2 h-4 w-4" />
                       Back
                     </Button>
-                    <button onClick={handleSubmit} className="submit-button">
+                    <button onClick={handleSubmit} className="submit-button order-1 sm:order-2">
                       Submit Application
                     </button>
                   </div>
