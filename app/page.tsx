@@ -95,6 +95,9 @@ export default function BusinessRegistrationForm() {
     setIsSubmitting(true)
 
     try {
+      console.log("[v0] Starting form submission...")
+      console.log("[v0] Form data:", formData)
+
       // Create FormData for file uploads
       const submitFormData = new FormData()
 
@@ -104,6 +107,8 @@ export default function BusinessRegistrationForm() {
       submitFormData.append("email", formData.email || formData.organizationEmail)
       submitFormData.append("phoneNumber", formData.phone || formData.organizationPhone)
       submitFormData.append("officeAddress", formData.businessAddress || formData.officeAddress)
+
+      console.log("[v0] Basic form data added to FormData")
 
       if (formData.totalShares) {
         submitFormData.append("totalShares", formData.totalShares.toString())
@@ -116,25 +121,32 @@ export default function BusinessRegistrationForm() {
         submitFormData.append("trusteeTenure", formData.trusteeTenure)
         submitFormData.append("sealCustodian", formData.sealCustodian)
         submitFormData.append("fundingSources", formData.fundingSources)
+        console.log("[v0] Trustees-specific data added")
       }
 
       // Add directors, shareholders, trustees as JSON
       if (formData.directors.length > 0) {
         submitFormData.append("directors", JSON.stringify(formData.directors))
+        console.log("[v0] Directors data added:", formData.directors.length, "directors")
       }
       if (formData.shareholders.length > 0) {
         submitFormData.append("shareholders", JSON.stringify(formData.shareholders))
+        console.log("[v0] Shareholders data added:", formData.shareholders.length, "shareholders")
       }
       if (formData.trustees.length > 0) {
         submitFormData.append("trustees", JSON.stringify(formData.trustees))
+        console.log("[v0] Trustees data added:", formData.trustees.length, "trustees")
       }
 
       // Add files
+      let totalFiles = 0
       formData.passportPhoto.forEach((file) => {
         submitFormData.append("passportPhotograph", file)
+        totalFiles++
       })
       formData.sampleSignature.forEach((file) => {
         submitFormData.append("sampleSignature", file)
+        totalFiles++
       })
 
       // Add files from directors/shareholders/trustees
@@ -143,20 +155,24 @@ export default function BusinessRegistrationForm() {
         if (person.idCard) {
           person.idCard.forEach((file: File) => {
             submitFormData.append("idCard", file)
+            totalFiles++
           })
         }
         if (person.passportPhotograph) {
           person.passportPhotograph.forEach((file: File) => {
             submitFormData.append("passportPhotograph", file)
+            totalFiles++
           })
         }
         if (person.sampleSignature) {
           person.sampleSignature.forEach((file: File) => {
             submitFormData.append("sampleSignature", file)
+            totalFiles++
           })
         }
       })
 
+      console.log("[v0] Total files added:", totalFiles)
       console.log("[v0] Submitting form data to API...")
 
       const response = await fetch("/api/submit-form", {
@@ -164,7 +180,11 @@ export default function BusinessRegistrationForm() {
         body: submitFormData,
       })
 
+      console.log("[v0] API response status:", response.status)
+      console.log("[v0] API response ok:", response.ok)
+
       const result = await response.json()
+      console.log("[v0] API response data:", result)
 
       if (result.success) {
         toast.success("Form submitted successfully!", {
@@ -186,12 +206,17 @@ export default function BusinessRegistrationForm() {
 
         console.log("[v0] Form submitted successfully:", result.data)
       } else {
+        console.error("[v0] API returned error:", result.message, result.error)
         throw new Error(result.message || "Failed to submit form")
       }
     } catch (error) {
       console.error("[v0] Form submission error:", error)
+      if (error instanceof Error) {
+        console.error("[v0] Error message:", error.message)
+        console.error("[v0] Error stack:", error.stack)
+      }
       toast.error("Failed to submit form", {
-        description: "Please check your internet connection and try again.",
+        description: error instanceof Error ? error.message : "Please check your internet connection and try again.",
         duration: 5000,
       })
     } finally {
