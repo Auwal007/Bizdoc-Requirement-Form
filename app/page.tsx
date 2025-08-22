@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Building2, Shield, ChevronRight, ChevronLeft, HelpCircle, X } from "lucide-react"
+import { Building2, Shield, ChevronRight, ChevronLeft, HelpCircle, X, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
@@ -9,9 +9,10 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { ProgressTracker } from "@/components/progress-tracker"
 import { FileUpload } from "@/components/file-upload"
 import { DynamicPersonForm } from "@/components/dynamic-person-form"
+import { toast } from "sonner"
 
 interface FormData {
-  registrationType: "bn" | "company" | ""
+  registrationType: "bn" | "company" | "trustees" | ""
   proposedName1: string
   proposedName2: string
   businessAddress: string
@@ -29,6 +30,15 @@ interface FormData {
   shareholders: any[]
   totalShares: number
   allotmentDetails: string
+  organizationName: string
+  organizationEmail: string
+  organizationPhone: string
+  officeAddress: string
+  keyObjectives: string
+  trusteeTenure: string
+  sealCustodian: string
+  fundingSources: string
+  trustees: any[]
 }
 
 const steps = ["Registration Type", "Business Details", "Directors & Shareholders", "Review & Submit"]
@@ -36,6 +46,7 @@ const steps = ["Registration Type", "Business Details", "Directors & Shareholder
 export default function BusinessRegistrationForm() {
   const [currentStep, setCurrentStep] = useState(0)
   const [showHelp, setShowHelp] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const [formData, setFormData] = useState<FormData>({
     registrationType: "",
     proposedName1: "",
@@ -53,6 +64,15 @@ export default function BusinessRegistrationForm() {
     shareholders: [],
     totalShares: 0,
     allotmentDetails: "",
+    organizationName: "",
+    organizationEmail: "",
+    organizationPhone: "",
+    officeAddress: "",
+    keyObjectives: "",
+    trusteeTenure: "",
+    sealCustodian: "",
+    fundingSources: "",
+    trustees: [],
   })
 
   const updateFormData = (field: keyof FormData, value: any) => {
@@ -71,10 +91,112 @@ export default function BusinessRegistrationForm() {
     }
   }
 
-  const handleSubmit = () => {
-    console.log("Form submitted:", formData)
-    // Here you would integrate with your backend/Google Sheets/Airtable
-    alert("Form submitted successfully! We will contact you shortly.")
+  const handleSubmit = async () => {
+    setIsSubmitting(true)
+
+    try {
+      // Create FormData for file uploads
+      const submitFormData = new FormData()
+
+      // Add basic form data
+      submitFormData.append("registrationType", formData.registrationType)
+      submitFormData.append("businessName", formData.proposedName1 || formData.organizationName)
+      submitFormData.append("email", formData.email || formData.organizationEmail)
+      submitFormData.append("phoneNumber", formData.phone || formData.organizationPhone)
+      submitFormData.append("officeAddress", formData.businessAddress || formData.officeAddress)
+
+      if (formData.totalShares) {
+        submitFormData.append("totalShares", formData.totalShares.toString())
+      }
+
+      // Add trustees-specific data
+      if (formData.registrationType === "trustees") {
+        submitFormData.append("organizationName", formData.organizationName)
+        submitFormData.append("keyObjectives", formData.keyObjectives)
+        submitFormData.append("trusteeTenure", formData.trusteeTenure)
+        submitFormData.append("sealCustodian", formData.sealCustodian)
+        submitFormData.append("fundingSources", formData.fundingSources)
+      }
+
+      // Add directors, shareholders, trustees as JSON
+      if (formData.directors.length > 0) {
+        submitFormData.append("directors", JSON.stringify(formData.directors))
+      }
+      if (formData.shareholders.length > 0) {
+        submitFormData.append("shareholders", JSON.stringify(formData.shareholders))
+      }
+      if (formData.trustees.length > 0) {
+        submitFormData.append("trustees", JSON.stringify(formData.trustees))
+      }
+
+      // Add files
+      formData.passportPhoto.forEach((file) => {
+        submitFormData.append("passportPhotograph", file)
+      })
+      formData.sampleSignature.forEach((file) => {
+        submitFormData.append("sampleSignature", file)
+      })
+
+      // Add files from directors/shareholders/trustees
+      const persons = [...formData.directors, ...formData.shareholders, ...formData.trustees]
+      persons.forEach((person) => {
+        if (person.idCard) {
+          person.idCard.forEach((file: File) => {
+            submitFormData.append("idCard", file)
+          })
+        }
+        if (person.passportPhotograph) {
+          person.passportPhotograph.forEach((file: File) => {
+            submitFormData.append("passportPhotograph", file)
+          })
+        }
+        if (person.sampleSignature) {
+          person.sampleSignature.forEach((file: File) => {
+            submitFormData.append("sampleSignature", file)
+          })
+        }
+      })
+
+      console.log("[v0] Submitting form data to API...")
+
+      const response = await fetch("/api/submit-form", {
+        method: "POST",
+        body: submitFormData,
+      })
+
+      const result = await response.json()
+
+      if (result.success) {
+        toast.success("Form submitted successfully!", {
+          description: "Your documents have been uploaded to Google Drive and a summary document has been created.",
+          duration: 5000,
+        })
+
+        // Show success message with links
+        const successMessage = `
+          Your application has been submitted successfully!
+          
+          📁 Documents Folder: ${result.data.folderLink}
+          📄 Summary Document: ${result.data.docLink}
+          
+          We will contact you shortly to proceed with your registration.
+        `
+
+        alert(successMessage)
+
+        console.log("[v0] Form submitted successfully:", result.data)
+      } else {
+        throw new Error(result.message || "Failed to submit form")
+      }
+    } catch (error) {
+      console.error("[v0] Form submission error:", error)
+      toast.error("Failed to submit form", {
+        description: "Please check your internet connection and try again.",
+        duration: 5000,
+      })
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -108,12 +230,6 @@ export default function BusinessRegistrationForm() {
                   your business registration with BIZDOC CONSULT. Please select the type of registration you want to
                   apply for, then provide the requested details.
                 </p>
-                <div className="flex items-center justify-center space-x-3 text-sm bg-secondary border border-primary/20 p-3 sm:p-4 rounded-lg">
-                  <Shield className="h-4 w-4 sm:h-5 sm:w-5 text-primary flex-shrink-0" />
-                  <span className="font-medium text-secondary-foreground">
-                    All information you share is kept strictly confidential and used only for your registration process.
-                  </span>
-                </div>
                 <p className="font-bold text-base sm:text-lg text-foreground">
                   Choose your registration type below to get started.
                 </p>
@@ -134,7 +250,7 @@ export default function BusinessRegistrationForm() {
 
               <RadioGroup
                 value={formData.registrationType}
-                onValueChange={(value) => updateFormData("registrationType", value as "bn" | "company")}
+                onValueChange={(value) => updateFormData("registrationType", value as "bn" | "company" | "trustees")}
                 className="space-y-3 sm:space-y-4"
               >
                 <div
@@ -181,6 +297,30 @@ export default function BusinessRegistrationForm() {
                     </div>
                   </div>
                 </div>
+
+                <div
+                  className={`cursor-pointer p-4 sm:p-6 border-2 rounded-lg transition-all duration-200 shadow-sm ${
+                    formData.registrationType === "trustees"
+                      ? "border-primary bg-primary/10 shadow-md"
+                      : "border-border hover:border-primary/50 hover:bg-secondary/50"
+                  }`}
+                  onClick={() => updateFormData("registrationType", "trustees")}
+                >
+                  <div className="flex items-start space-x-3 sm:space-x-4">
+                    <RadioGroupItem value="trustees" id="trustees" className="mt-1" />
+                    <div className="flex-1 min-w-0">
+                      <Label
+                        htmlFor="trustees"
+                        className="text-lg sm:text-xl font-bold cursor-pointer text-foreground block"
+                      >
+                        Incorporated Trustees
+                      </Label>
+                      <p className="text-sm text-muted-foreground mt-1 sm:mt-2 leading-relaxed">
+                        Register a non-profit organization, NGO, or charitable organization
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </RadioGroup>
 
               <div className="flex justify-end pt-4 sm:pt-6">
@@ -199,7 +339,7 @@ export default function BusinessRegistrationForm() {
 
         {showHelp && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-            <Card className="max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <Card className="max-w-3xl w-full max-h-[90vh] overflow-y-auto">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
                 <CardTitle className="text-xl font-bold text-primary">
                   Which Registration Type Should You Choose?
@@ -261,6 +401,32 @@ export default function BusinessRegistrationForm() {
                     </div>
                   </div>
 
+                  <div className="border border-primary/20 rounded-lg p-4 bg-primary/5">
+                    <h3 className="font-bold text-lg text-primary mb-3">Incorporated Trustees</h3>
+                    <div className="space-y-2 text-sm">
+                      <p>
+                        <strong>Best for:</strong> Non-profit organizations, NGOs, charitable organizations, religious
+                        bodies
+                      </p>
+                      <p>
+                        <strong>Purpose:</strong> Social, charitable, educational, or religious objectives
+                      </p>
+                      <p>
+                        <strong>Structure:</strong> Governed by trustees with defined tenure
+                      </p>
+                      <p>
+                        <strong>Funding:</strong> Donations, grants, membership fees, fundraising activities
+                      </p>
+                      <p>
+                        <strong>Requirements:</strong> Constitution, trustees details, objectives, funding sources
+                      </p>
+                      <p>
+                        <strong>Examples:</strong> Foundations, community organizations, religious groups, educational
+                        trusts
+                      </p>
+                    </div>
+                  </div>
+
                   <div className="bg-secondary border border-primary/30 p-4 rounded-lg">
                     <h4 className="font-bold text-primary mb-2">Quick Decision Guide:</h4>
                     <ul className="text-sm space-y-1 text-secondary-foreground">
@@ -269,6 +435,9 @@ export default function BusinessRegistrationForm() {
                       </li>
                       <li>
                         • Choose <strong>Company Limited</strong> if you want liability protection and plan to grow
+                      </li>
+                      <li>
+                        • Choose <strong>Incorporated Trustees</strong> if you're establishing a non-profit organization
                       </li>
                       <li>
                         • Choose <strong>Company Limited</strong> if you have multiple partners/investors
@@ -296,77 +465,191 @@ export default function BusinessRegistrationForm() {
 
             {currentStep === 1 && (
               <div className="space-y-6 sm:space-y-8">
-                {/* Proposed Business Names Section */}
-                <div className="form-section">
-                  <h3 className="section-title">Proposed Business Names</h3>
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-                    <div>
-                      <label className="form-label">Proposed Name 1</label>
-                      <input
-                        type="text"
-                        className="form-input"
-                        value={formData.proposedName1}
-                        onChange={(e) => updateFormData("proposedName1", e.target.value)}
-                        placeholder="Enter first choice name"
-                      />
-                    </div>
-                    <div>
-                      <label className="form-label">Proposed Name 2</label>
-                      <input
-                        type="text"
-                        className="form-input"
-                        value={formData.proposedName2}
-                        onChange={(e) => updateFormData("proposedName2", e.target.value)}
-                        placeholder="Enter alternative name"
-                      />
-                    </div>
-                  </div>
-                </div>
+                {formData.registrationType === "trustees" ? (
+                  <>
+                    {/* Organization Details Section */}
+                    <Card className="card-enhanced">
+                      <CardHeader>
+                        <CardTitle className="section-title">Organization Details</CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4 sm:space-y-6">
+                        <div>
+                          <label className="form-label">Organization Name</label>
+                          <input
+                            type="text"
+                            className="form-input"
+                            value={formData.organizationName}
+                            onChange={(e) => updateFormData("organizationName", e.target.value)}
+                            placeholder="Enter organization name"
+                          />
+                        </div>
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+                          <div>
+                            <label className="form-label">Email Address</label>
+                            <input
+                              type="email"
+                              className="form-input"
+                              value={formData.organizationEmail}
+                              onChange={(e) => updateFormData("organizationEmail", e.target.value)}
+                              placeholder="Enter organization email"
+                            />
+                          </div>
+                          <div>
+                            <label className="form-label">Phone Number</label>
+                            <input
+                              type="tel"
+                              className="form-input"
+                              value={formData.organizationPhone}
+                              onChange={(e) => updateFormData("organizationPhone", e.target.value)}
+                              placeholder="Enter phone number"
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <label className="form-label">Office Address</label>
+                          <input
+                            type="text"
+                            className="form-input"
+                            value={formData.officeAddress}
+                            onChange={(e) => updateFormData("officeAddress", e.target.value)}
+                            placeholder="Enter complete office address"
+                          />
+                        </div>
+                      </CardContent>
+                    </Card>
 
-                {/* Business Contact Information Section */}
-                <div className="form-section">
-                  <h3 className="section-title">Business Contact Information</h3>
-                  <div className="space-y-4 sm:space-y-6">
-                    <div>
-                      <label className="form-label">Business Address</label>
-                      <input
-                        type="text"
-                        className="form-input"
-                        value={formData.businessAddress}
-                        onChange={(e) => updateFormData("businessAddress", e.target.value)}
-                        placeholder="Enter complete business address"
-                      />
-                    </div>
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-                      <div>
-                        <label className="form-label">Email Address</label>
-                        <input
-                          type="email"
-                          className="form-input"
-                          value={formData.email}
-                          onChange={(e) => updateFormData("email", e.target.value)}
-                          placeholder="Enter email address"
-                        />
-                      </div>
-                      <div>
-                        <label className="form-label">Phone Number</label>
-                        <input
-                          type="tel"
-                          className="form-input"
-                          value={formData.phone}
-                          onChange={(e) => updateFormData("phone", e.target.value)}
-                          placeholder="Enter phone number"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                    {/* Additional Information Section */}
+                    <Card className="card-enhanced">
+                      <CardHeader>
+                        <CardTitle className="section-title">Additional Information</CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4 sm:space-y-6">
+                        <div>
+                          <label className="form-label">Five (5) Key Objectives of the Organization</label>
+                          <textarea
+                            className="form-input resize-none"
+                            rows={5}
+                            value={formData.keyObjectives}
+                            onChange={(e) => updateFormData("keyObjectives", e.target.value)}
+                            placeholder="List the five main objectives of your organization"
+                          />
+                        </div>
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+                          <div>
+                            <label className="form-label">Trustee Tenure</label>
+                            <input
+                              type="text"
+                              className="form-input"
+                              value={formData.trusteeTenure}
+                              onChange={(e) => updateFormData("trusteeTenure", e.target.value)}
+                              placeholder="e.g., 1 year, 2 years, etc."
+                            />
+                          </div>
+                          <div>
+                            <label className="form-label">Custodian of Organization's Seal</label>
+                            <input
+                              type="text"
+                              className="form-input"
+                              value={formData.sealCustodian}
+                              onChange={(e) => updateFormData("sealCustodian", e.target.value)}
+                              placeholder="e.g., Secretary"
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <label className="form-label">Source(s) of Funding</label>
+                          <textarea
+                            className="form-input resize-none"
+                            rows={3}
+                            value={formData.fundingSources}
+                            onChange={(e) => updateFormData("fundingSources", e.target.value)}
+                            placeholder="Describe the sources of funding for the organization"
+                          />
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </>
+                ) : (
+                  <>
+                    {/* Proposed Business Names Section */}
+                    <Card className="card-enhanced">
+                      <CardHeader>
+                        <CardTitle className="section-title">Proposed Business Names</CardTitle>
+                      </CardHeader>
+                      <CardContent className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+                        <div>
+                          <label className="form-label">Proposed Name 1</label>
+                          <input
+                            type="text"
+                            className="form-input"
+                            value={formData.proposedName1}
+                            onChange={(e) => updateFormData("proposedName1", e.target.value)}
+                            placeholder="Enter first choice name"
+                          />
+                        </div>
+                        <div>
+                          <label className="form-label">Proposed Name 2</label>
+                          <input
+                            type="text"
+                            className="form-input"
+                            value={formData.proposedName2}
+                            onChange={(e) => updateFormData("proposedName2", e.target.value)}
+                            placeholder="Enter alternative name"
+                          />
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    {/* Business Contact Information Section */}
+                    <Card className="card-enhanced">
+                      <CardHeader>
+                        <CardTitle className="section-title">Business Contact Information</CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4 sm:space-y-6">
+                        <div>
+                          <label className="form-label">Business Address</label>
+                          <input
+                            type="text"
+                            className="form-input"
+                            value={formData.businessAddress}
+                            onChange={(e) => updateFormData("businessAddress", e.target.value)}
+                            placeholder="Enter complete business address"
+                          />
+                        </div>
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+                          <div>
+                            <label className="form-label">Email Address</label>
+                            <input
+                              type="email"
+                              className="form-input"
+                              value={formData.email}
+                              onChange={(e) => updateFormData("email", e.target.value)}
+                              placeholder="Enter email address"
+                            />
+                          </div>
+                          <div>
+                            <label className="form-label">Phone Number</label>
+                            <input
+                              type="tel"
+                              className="form-input"
+                              value={formData.phone}
+                              onChange={(e) => updateFormData("phone", e.target.value)}
+                              placeholder="Enter phone number"
+                            />
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </>
+                )}
 
                 {/* Shares & Allotment Section (Company only) */}
                 {formData.registrationType === "company" && (
-                  <div className="form-section">
-                    <h3 className="section-title">Shares & Allotment</h3>
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+                  <Card className="card-enhanced">
+                    <CardHeader>
+                      <CardTitle className="section-title">Shares & Allotment</CardTitle>
+                    </CardHeader>
+                    <CardContent className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                       <div>
                         <label className="form-label">Total Shares</label>
                         <input
@@ -390,16 +673,18 @@ export default function BusinessRegistrationForm() {
                           placeholder="Describe share allotment details"
                         />
                       </div>
-                    </div>
-                  </div>
+                    </CardContent>
+                  </Card>
                 )}
 
                 {/* BN Specific Sections */}
                 {formData.registrationType === "bn" && (
                   <>
-                    <div className="form-section">
-                      <h3 className="section-title">Director Information</h3>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+                    <Card className="card-enhanced">
+                      <CardHeader>
+                        <CardTitle className="section-title">Director Information</CardTitle>
+                      </CardHeader>
+                      <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                         <div>
                           <label className="form-label">Director Name</label>
                           <input
@@ -430,12 +715,14 @@ export default function BusinessRegistrationForm() {
                             placeholder="Enter phone number"
                           />
                         </div>
-                      </div>
-                    </div>
+                      </CardContent>
+                    </Card>
 
-                    <div className="form-section">
-                      <h3 className="section-title">Required Documents</h3>
-                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+                    <Card className="card-enhanced">
+                      <CardHeader>
+                        <CardTitle className="section-title">Required Documents</CardTitle>
+                      </CardHeader>
+                      <CardContent className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                         <FileUpload
                           label="Passport Photograph"
                           accept="image/*"
@@ -446,36 +733,50 @@ export default function BusinessRegistrationForm() {
                           accept="image/*,.pdf"
                           onFilesChange={(files) => updateFormData("sampleSignature", files)}
                         />
-                      </div>
-                    </div>
+                      </CardContent>
+                    </Card>
                   </>
                 )}
 
                 {/* Nature of Business Section */}
-                <div className="form-section">
-                  <h3 className="section-title">Nature of Business</h3>
-                  <div>
-                    <label className="form-label">Business Description</label>
-                    <textarea
-                      className="form-input resize-none"
-                      rows={4}
-                      value={formData.natureOfBusiness}
-                      onChange={(e) => updateFormData("natureOfBusiness", e.target.value)}
-                      placeholder="Describe the nature and activities of your business"
-                    />
-                  </div>
-                </div>
+                {formData.registrationType !== "trustees" && (
+                  <Card className="card-enhanced">
+                    <CardHeader>
+                      <CardTitle className="section-title">Nature of Business</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div>
+                        <label className="form-label">Business Description</label>
+                        <textarea
+                          className="form-input resize-none"
+                          rows={4}
+                          value={formData.natureOfBusiness}
+                          onChange={(e) => updateFormData("natureOfBusiness", e.target.value)}
+                          placeholder="Describe the nature and activities of your business"
+                        />
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
 
-                <div className="flex flex-col sm:flex-row justify-between gap-3 sm:gap-0 pt-4 sm:pt-6">
-                  <Button onClick={prevStep} variant="outline" className="px-6 py-3 bg-transparent order-2 sm:order-1">
-                    <ChevronLeft className="mr-2 h-4 w-4" />
-                    Back
-                  </Button>
-                  <Button onClick={nextStep} className="submit-button order-1 sm:order-2">
-                    Continue
-                    <ChevronRight className="ml-2 h-4 w-4" />
-                  </Button>
-                </div>
+                {/* Navigation Buttons */}
+                <Card className="card-enhanced">
+                  <CardContent className="flex flex-col sm:flex-row justify-between gap-3 sm:gap-0 pt-2">
+                    <Button
+                      onClick={prevStep}
+                      variant="outline"
+                      className="px-6 py-3 bg-transparent order-2 sm:order-1"
+                      disabled={isSubmitting}
+                    >
+                      <ChevronLeft className="mr-2 h-4 w-4" />
+                      Back
+                    </Button>
+                    <Button onClick={nextStep} className="submit-button order-1 sm:order-2" disabled={isSubmitting}>
+                      Continue
+                      <ChevronRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  </CardContent>
+                </Card>
               </div>
             )}
 
@@ -505,6 +806,39 @@ export default function BusinessRegistrationForm() {
                       onClick={prevStep}
                       variant="outline"
                       className="px-6 py-3 bg-transparent order-2 sm:order-1"
+                      disabled={isSubmitting}
+                    >
+                      <ChevronLeft className="mr-2 h-4 w-4" />
+                      Back
+                    </Button>
+                    <Button onClick={nextStep} className="submit-button order-1 sm:order-2">
+                      Review Application
+                      <ChevronRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {currentStep === 2 && formData.registrationType === "trustees" && (
+              <Card className="card-enhanced">
+                <CardHeader>
+                  <CardTitle className="section-title">Trustee Details</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6 sm:space-y-8">
+                  <DynamicPersonForm
+                    title="Particulars of Trustees"
+                    type="trustee"
+                    persons={formData.trustees}
+                    onPersonsChange={(trustees) => updateFormData("trustees", trustees)}
+                  />
+
+                  <div className="flex flex-col sm:flex-row justify-between gap-3 sm:gap-0 pt-4 sm:pt-6">
+                    <Button
+                      onClick={prevStep}
+                      variant="outline"
+                      className="px-6 py-3 bg-transparent order-2 sm:order-1"
+                      disabled={isSubmitting}
                     >
                       <ChevronLeft className="mr-2 h-4 w-4" />
                       Back
@@ -519,7 +853,8 @@ export default function BusinessRegistrationForm() {
             )}
 
             {((currentStep === 2 && formData.registrationType === "bn") ||
-              (currentStep === 3 && formData.registrationType === "company")) && (
+              (currentStep === 3 &&
+                (formData.registrationType === "company" || formData.registrationType === "trustees"))) && (
               <Card className="card-enhanced">
                 <CardHeader>
                   <CardTitle className="section-title">Review & Submit</CardTitle>
@@ -534,21 +869,44 @@ export default function BusinessRegistrationForm() {
                       <div>
                         <span className="font-medium text-foreground">Registration Type:</span>
                         <p className="text-muted-foreground mt-1">
-                          {formData.registrationType === "bn" ? "Business Name (BN)" : "Company Limited"}
+                          {formData.registrationType === "bn"
+                            ? "Business Name (BN)"
+                            : formData.registrationType === "company"
+                              ? "Company Limited"
+                              : "Incorporated Trustees"}
                         </p>
                       </div>
-                      <div>
-                        <span className="font-medium text-foreground">Proposed Name 1:</span>
-                        <p className="text-muted-foreground mt-1">{formData.proposedName1}</p>
-                      </div>
-                      <div>
-                        <span className="font-medium text-foreground">Business Address:</span>
-                        <p className="text-muted-foreground mt-1">{formData.businessAddress}</p>
-                      </div>
-                      <div>
-                        <span className="font-medium text-foreground">Contact Email:</span>
-                        <p className="text-muted-foreground mt-1">{formData.email}</p>
-                      </div>
+                      {formData.registrationType === "trustees" ? (
+                        <>
+                          <div>
+                            <span className="font-medium text-foreground">Organization Name:</span>
+                            <p className="text-muted-foreground mt-1">{formData.organizationName}</p>
+                          </div>
+                          <div>
+                            <span className="font-medium text-foreground">Office Address:</span>
+                            <p className="text-muted-foreground mt-1">{formData.officeAddress}</p>
+                          </div>
+                          <div>
+                            <span className="font-medium text-foreground">Contact Email:</span>
+                            <p className="text-muted-foreground mt-1">{formData.organizationEmail}</p>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <div>
+                            <span className="font-medium text-foreground">Proposed Name 1:</span>
+                            <p className="text-muted-foreground mt-1">{formData.proposedName1}</p>
+                          </div>
+                          <div>
+                            <span className="font-medium text-foreground">Business Address:</span>
+                            <p className="text-muted-foreground mt-1">{formData.businessAddress}</p>
+                          </div>
+                          <div>
+                            <span className="font-medium text-foreground">Contact Email:</span>
+                            <p className="text-muted-foreground mt-1">{formData.email}</p>
+                          </div>
+                        </>
+                      )}
                     </div>
                   </div>
 
@@ -565,18 +923,34 @@ export default function BusinessRegistrationForm() {
                     </div>
                   </div>
 
+                  <div className="flex items-center justify-center space-x-3 text-sm bg-secondary border border-primary/20 p-3 sm:p-4 rounded-lg">
+                    <Shield className="h-4 w-4 sm:h-5 sm:w-5 text-primary flex-shrink-0" />
+                    <span className="font-medium text-secondary-foreground">
+                      All information you share is kept strictly confidential and used only for your registration
+                      process.
+                    </span>
+                  </div>
+
                   <div className="flex flex-col sm:flex-row justify-between gap-3 sm:gap-0 pt-4 sm:pt-6">
                     <Button
                       onClick={prevStep}
                       variant="outline"
                       className="px-6 py-3 bg-transparent order-2 sm:order-1"
+                      disabled={isSubmitting}
                     >
                       <ChevronLeft className="mr-2 h-4 w-4" />
                       Back
                     </Button>
-                    <button onClick={handleSubmit} className="submit-button order-1 sm:order-2">
-                      Submit Application
-                    </button>
+                    <Button onClick={handleSubmit} className="submit-button order-1 sm:order-2" disabled={isSubmitting}>
+                      {isSubmitting ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Submitting...
+                        </>
+                      ) : (
+                        "Submit Application"
+                      )}
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
