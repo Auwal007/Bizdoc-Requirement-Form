@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Building2, Shield, ChevronRight, ChevronLeft } from "lucide-react"
+import { Building2, Shield, ChevronRight, ChevronLeft, HelpCircle, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
@@ -35,6 +35,7 @@ const steps = ["Registration Type", "Business Details", "Directors & Shareholder
 
 export default function BusinessRegistrationForm() {
   const [currentStep, setCurrentStep] = useState(0)
+  const [showHelp, setShowHelp] = useState(false)
   const [formData, setFormData] = useState<FormData>({
     registrationType: "",
     proposedName1: "",
@@ -119,6 +120,18 @@ export default function BusinessRegistrationForm() {
               </div>
             </CardHeader>
             <CardContent className="space-y-4 sm:space-y-6">
+              <div className="text-center mb-6">
+                <button
+                  onClick={() => setShowHelp(true)}
+                  className="inline-flex items-center space-x-2 text-primary hover:text-primary/80 transition-colors duration-200 bg-primary/10 hover:bg-primary/20 px-4 py-2 rounded-lg border border-primary/30"
+                >
+                  <HelpCircle className="h-4 w-4" />
+                  <span className="text-sm font-medium">
+                    Not sure which one to choose? Click to see which one suits you
+                  </span>
+                </button>
+              </div>
+
               <RadioGroup
                 value={formData.registrationType}
                 onValueChange={(value) => updateFormData("registrationType", value as "bn" | "company")}
@@ -182,6 +195,99 @@ export default function BusinessRegistrationForm() {
               </div>
             </CardContent>
           </Card>
+        )}
+
+        {showHelp && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+            <Card className="max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+                <CardTitle className="text-xl font-bold text-primary">
+                  Which Registration Type Should You Choose?
+                </CardTitle>
+                <button
+                  onClick={() => setShowHelp(false)}
+                  className="text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="space-y-4">
+                  <div className="border border-primary/20 rounded-lg p-4 bg-primary/5">
+                    <h3 className="font-bold text-lg text-primary mb-3">Business Name (BN)</h3>
+                    <div className="space-y-2 text-sm">
+                      <p>
+                        <strong>Best for:</strong> Small businesses, sole proprietors, partnerships
+                      </p>
+                      <p>
+                        <strong>Liability:</strong> Unlimited personal liability
+                      </p>
+                      <p>
+                        <strong>Ownership:</strong> Individual or partnership ownership
+                      </p>
+                      <p>
+                        <strong>Cost:</strong> Lower registration and maintenance costs
+                      </p>
+                      <p>
+                        <strong>Requirements:</strong> Simpler documentation and fewer compliance requirements
+                      </p>
+                      <p>
+                        <strong>Examples:</strong> Small retail shops, consultancy services, freelance businesses
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="border border-primary/20 rounded-lg p-4 bg-primary/5">
+                    <h3 className="font-bold text-lg text-primary mb-3">Company Limited</h3>
+                    <div className="space-y-2 text-sm">
+                      <p>
+                        <strong>Best for:</strong> Larger businesses, multiple investors, growth-oriented ventures
+                      </p>
+                      <p>
+                        <strong>Liability:</strong> Limited liability protection for shareholders
+                      </p>
+                      <p>
+                        <strong>Ownership:</strong> Shareholders with transferable shares
+                      </p>
+                      <p>
+                        <strong>Cost:</strong> Higher registration and ongoing compliance costs
+                      </p>
+                      <p>
+                        <strong>Requirements:</strong> More complex documentation, annual filings, board meetings
+                      </p>
+                      <p>
+                        <strong>Examples:</strong> Tech startups, manufacturing companies, businesses seeking investment
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="bg-secondary border border-primary/30 p-4 rounded-lg">
+                    <h4 className="font-bold text-primary mb-2">Quick Decision Guide:</h4>
+                    <ul className="text-sm space-y-1 text-secondary-foreground">
+                      <li>
+                        • Choose <strong>Business Name</strong> if you're starting small and want simplicity
+                      </li>
+                      <li>
+                        • Choose <strong>Company Limited</strong> if you want liability protection and plan to grow
+                      </li>
+                      <li>
+                        • Choose <strong>Company Limited</strong> if you have multiple partners/investors
+                      </li>
+                      <li>
+                        • Choose <strong>Business Name</strong> if you're a freelancer or consultant
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+
+                <div className="flex justify-center pt-4">
+                  <Button onClick={() => setShowHelp(false)} className="submit-button">
+                    Got it! Let me choose
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         )}
 
         {currentStep > 0 && (
