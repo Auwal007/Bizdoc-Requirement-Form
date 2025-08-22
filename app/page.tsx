@@ -92,11 +92,41 @@ export default function BusinessRegistrationForm() {
   }
 
   const handleSubmit = async () => {
+    console.log("[v0] === FORM SUBMISSION DEBUG START ===")
+    console.log("[v0] Current step:", currentStep)
+    console.log("[v0] Registration type:", formData.registrationType)
+
+    if (!formData.registrationType) {
+      console.log("[v0] ERROR: No registration type selected")
+      toast.error("Please select a registration type")
+      return
+    }
+
+    // Validate required fields based on registration type
+    if (formData.registrationType === "trustees") {
+      if (!formData.organizationName || !formData.organizationEmail) {
+        console.log("[v0] ERROR: Missing required trustees fields")
+        toast.error("Please fill in all required organization details")
+        return
+      }
+    } else {
+      if (!formData.proposedName1 || !formData.email) {
+        console.log("[v0] ERROR: Missing required business fields")
+        toast.error("Please fill in all required business details")
+        return
+      }
+    }
+
+    console.log("[v0] Validation passed, proceeding with submission...")
     setIsSubmitting(true)
 
     try {
       console.log("[v0] Starting form submission...")
-      console.log("[v0] Form data:", formData)
+      console.log("[v0] Form data:", JSON.stringify(formData, null, 2))
+
+      if (!navigator.onLine) {
+        throw new Error("No internet connection. Please check your network and try again.")
+      }
 
       // Create FormData for file uploads
       const submitFormData = new FormData()
@@ -143,50 +173,80 @@ export default function BusinessRegistrationForm() {
       formData.passportPhoto.forEach((file) => {
         submitFormData.append("passportPhotograph", file)
         totalFiles++
+        console.log("[v0] Added passport photo:", file.name, file.size, "bytes")
       })
       formData.sampleSignature.forEach((file) => {
         submitFormData.append("sampleSignature", file)
         totalFiles++
+        console.log("[v0] Added sample signature:", file.name, file.size, "bytes")
       })
 
       // Add files from directors/shareholders/trustees
       const persons = [...formData.directors, ...formData.shareholders, ...formData.trustees]
-      persons.forEach((person) => {
-        if (person.idCard) {
+      persons.forEach((person, index) => {
+        console.log(`[v0] Processing person ${index + 1}:`, person.fullName || person.name)
+
+        if (person.idCard && person.idCard.length > 0) {
           person.idCard.forEach((file: File) => {
             submitFormData.append("idCard", file)
             totalFiles++
+            console.log("[v0] Added ID card:", file.name, file.size, "bytes")
           })
         }
-        if (person.passportPhotograph) {
+        if (person.passportPhotograph && person.passportPhotograph.length > 0) {
           person.passportPhotograph.forEach((file: File) => {
             submitFormData.append("passportPhotograph", file)
             totalFiles++
+            console.log("[v0] Added passport photo:", file.name, file.size, "bytes")
           })
         }
-        if (person.sampleSignature) {
+        if (person.sampleSignature && person.sampleSignature.length > 0) {
           person.sampleSignature.forEach((file: File) => {
             submitFormData.append("sampleSignature", file)
             totalFiles++
+            console.log("[v0] Added sample signature:", file.name, file.size, "bytes")
           })
         }
       })
 
       console.log("[v0] Total files added:", totalFiles)
+
+      console.log("[v0] FormData entries:")
+      for (const [key, value] of submitFormData.entries()) {
+        if (value instanceof File) {
+          console.log(`[v0] ${key}: File(${value.name}, ${value.size} bytes, ${value.type})`)
+        } else {
+          console.log(`[v0] ${key}:`, value)
+        }
+      }
+
       console.log("[v0] Submitting form data to API...")
+      console.log("[v0] API endpoint: /api/submit-form")
 
       const response = await fetch("/api/submit-form", {
         method: "POST",
         body: submitFormData,
       })
 
-      console.log("[v0] API response status:", response.status)
-      console.log("[v0] API response ok:", response.ok)
+      console.log("[v0] API response received")
+      console.log("[v0] Response status:", response.status)
+      console.log("[v0] Response status text:", response.statusText)
+      console.log("[v0] Response ok:", response.ok)
+      console.log("[v0] Response headers:", Object.fromEntries(response.headers.entries()))
 
-      const result = await response.json()
-      console.log("[v0] API response data:", result)
+      let result
+      try {
+        const responseText = await response.text()
+        console.log("[v0] Raw response text:", responseText)
+        result = JSON.parse(responseText)
+        console.log("[v0] Parsed response data:", result)
+      } catch (parseError) {
+        console.error("[v0] Failed to parse response as JSON:", parseError)
+        throw new Error(`Server returned invalid response: ${response.status} ${response.statusText}`)
+      }
 
       if (result.success) {
+        console.log("[v0] SUCCESS: Form submitted successfully")
         toast.success("Form submitted successfully!", {
           description: "Your documents have been uploaded to Google Drive and a summary document has been created.",
           duration: 5000,
@@ -203,24 +263,37 @@ export default function BusinessRegistrationForm() {
         `
 
         alert(successMessage)
-
         console.log("[v0] Form submitted successfully:", result.data)
       } else {
         console.error("[v0] API returned error:", result.message, result.error)
         throw new Error(result.message || "Failed to submit form")
       }
     } catch (error) {
-      console.error("[v0] Form submission error:", error)
+      console.error("[v0] === FORM SUBMISSION ERROR ===")
+      console.error("[v0] Error type:", typeof error)
+      console.error("[v0] Error:", error)
+
       if (error instanceof Error) {
+        console.error("[v0] Error name:", error.name)
         console.error("[v0] Error message:", error.message)
         console.error("[v0] Error stack:", error.stack)
       }
+
+      let errorMessage = "An unexpected error occurred. Please try again."
+
+      if (error instanceof TypeError && error.message.includes("fetch")) {
+        errorMessage = "Network error. Please check your internet connection and try again."
+      } else if (error instanceof Error) {
+        errorMessage = error.message
+      }
+
       toast.error("Failed to submit form", {
-        description: error instanceof Error ? error.message : "Please check your internet connection and try again.",
+        description: errorMessage,
         duration: 5000,
       })
     } finally {
       setIsSubmitting(false)
+      console.log("[v0] === FORM SUBMISSION DEBUG END ===")
     }
   }
 
