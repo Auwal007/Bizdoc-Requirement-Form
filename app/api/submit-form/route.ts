@@ -28,6 +28,13 @@ export async function POST(request: NextRequest) {
       trusteeTenure: formData.get("trusteeTenure") as string,
       sealCustodian: formData.get("sealCustodian") as string,
       fundingSources: formData.get("fundingSources") as string,
+      // Business Name specific fields
+      proposedName1: formData.get("proposedName1") as string,
+      proposedName2: formData.get("proposedName2") as string,
+      natureOfBusiness: formData.get("natureOfBusiness") as string,
+      directorName: formData.get("directorName") as string,
+      directorNIN: formData.get("directorNIN") as string,
+      directorPhone: formData.get("directorPhone") as string,
     }
 
     // Parse directors, shareholders, trustees

@@ -12,6 +12,13 @@ export interface FormData {
   trusteeTenure?: string
   sealCustodian?: string
   fundingSources?: string
+  // Business Name specific fields
+  proposedName1?: string
+  proposedName2?: string
+  natureOfBusiness?: string
+  directorName?: string
+  directorNIN?: string
+  directorPhone?: string
   directors?: Array<{
     fullName: string
     email: string
@@ -245,6 +252,20 @@ export async function createDropboxDocument(
     if (formData.organizationName) {
       content += `Organization Name: ${formData.organizationName}\n`
     }
+
+    // Business Name specific fields
+    if (formData.registrationType === 'bn') {
+      if (formData.proposedName1) {
+        content += `Proposed Name 1: ${formData.proposedName1}\n`
+      }
+      if (formData.proposedName2) {
+        content += `Proposed Name 2: ${formData.proposedName2}\n`
+      }
+      if (formData.natureOfBusiness) {
+        content += `Nature of Business: ${formData.natureOfBusiness}\n`
+      }
+    }
+
     content += `Registration Type: ${formData.registrationType}\n`
     content += `Email: ${formData.email}\n`
     content += `Phone Number: ${formData.phoneNumber}\n`
@@ -273,6 +294,22 @@ export async function createDropboxDocument(
     }
 
     // Add directors information
+    if (formData.registrationType === 'bn' && (formData.directorName || formData.directorNIN || formData.directorPhone)) {
+      content += `DIRECTOR INFORMATION (Business Name):\n`
+      content += `-------------------------------------\n`
+      if (formData.directorName) {
+        content += `Director Name: ${formData.directorName}\n`
+      }
+      if (formData.directorNIN) {
+        content += `Director NIN: ${formData.directorNIN}\n`
+      }
+      if (formData.directorPhone) {
+        content += `Director Phone: ${formData.directorPhone}\n`
+      }
+      content += `\n`
+    }
+
+    // Add directors information (for Company Limited and Trustees)
     if (formData.directors && formData.directors.length > 0) {
       content += `DIRECTORS INFORMATION:\n`
       content += `----------------------\n`

@@ -47,6 +47,7 @@ export default function BusinessRegistrationForm() {
   const [currentStep, setCurrentStep] = useState(0)
   const [showHelp, setShowHelp] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [showSuccessModal, setShowSuccessModal] = useState(false)
   const [formData, setFormData] = useState<FormData>({
     registrationType: "",
     proposedName1: "",
@@ -144,6 +145,17 @@ export default function BusinessRegistrationForm() {
         submitFormData.append("totalShares", formData.totalShares.toString())
       }
 
+      // Add Business Name-specific data
+      if (formData.registrationType === "bn") {
+        submitFormData.append("proposedName1", formData.proposedName1)
+        submitFormData.append("proposedName2", formData.proposedName2)
+        submitFormData.append("natureOfBusiness", formData.natureOfBusiness)
+        submitFormData.append("directorName", formData.directorName)
+        submitFormData.append("directorNIN", formData.directorNIN)
+        submitFormData.append("directorPhone", formData.directorPhone)
+        console.log("[v0] Business Name-specific data added")
+      }
+
       // Add trustees-specific data
       if (formData.registrationType === "trustees") {
         submitFormData.append("organizationName", formData.organizationName)
@@ -186,22 +198,22 @@ export default function BusinessRegistrationForm() {
       formData.directors.forEach((director, directorIndex) => {
         console.log(`[v0] Processing director ${directorIndex + 1}:`, director.fullName)
 
-        if (director.idCard && director.idCard.length > 0) {
-          director.idCard.forEach((file: File) => {
+        if (director.files?.idCard && director.files.idCard.length > 0) {
+          director.files.idCard.forEach((file: File) => {
             submitFormData.append(`director_${directorIndex}_idCard`, file)
             totalFiles++
             console.log(`[v0] Added director ${directorIndex + 1} ID card:`, file.name, file.size, "bytes")
           })
         }
-        if (director.passportPhotograph && director.passportPhotograph.length > 0) {
-          director.passportPhotograph.forEach((file: File) => {
+        if (director.files?.passport && director.files.passport.length > 0) {
+          director.files.passport.forEach((file: File) => {
             submitFormData.append(`director_${directorIndex}_passportPhotograph`, file)
             totalFiles++
             console.log(`[v0] Added director ${directorIndex + 1} passport photo:`, file.name, file.size, "bytes")
           })
         }
-        if (director.sampleSignature && director.sampleSignature.length > 0) {
-          director.sampleSignature.forEach((file: File) => {
+        if (director.files?.signature && director.files.signature.length > 0) {
+          director.files.signature.forEach((file: File) => {
             submitFormData.append(`director_${directorIndex}_sampleSignature`, file)
             totalFiles++
             console.log(`[v0] Added director ${directorIndex + 1} sample signature:`, file.name, file.size, "bytes")
@@ -212,22 +224,22 @@ export default function BusinessRegistrationForm() {
       formData.shareholders.forEach((shareholder, shareholderIndex) => {
         console.log(`[v0] Processing shareholder ${shareholderIndex + 1}:`, shareholder.fullName)
 
-        if (shareholder.idCard && shareholder.idCard.length > 0) {
-          shareholder.idCard.forEach((file: File) => {
+        if (shareholder.files?.idCard && shareholder.files.idCard.length > 0) {
+          shareholder.files.idCard.forEach((file: File) => {
             submitFormData.append(`shareholder_${shareholderIndex}_idCard`, file)
             totalFiles++
             console.log(`[v0] Added shareholder ${shareholderIndex + 1} ID card:`, file.name, file.size, "bytes")
           })
         }
-        if (shareholder.passportPhotograph && shareholder.passportPhotograph.length > 0) {
-          shareholder.passportPhotograph.forEach((file: File) => {
+        if (shareholder.files?.passport && shareholder.files.passport.length > 0) {
+          shareholder.files.passport.forEach((file: File) => {
             submitFormData.append(`shareholder_${shareholderIndex}_passportPhotograph`, file)
             totalFiles++
             console.log(`[v0] Added shareholder ${shareholderIndex + 1} passport photo:`, file.name, file.size, "bytes")
           })
         }
-        if (shareholder.sampleSignature && shareholder.sampleSignature.length > 0) {
-          shareholder.sampleSignature.forEach((file: File) => {
+        if (shareholder.files?.signature && shareholder.files.signature.length > 0) {
+          shareholder.files.signature.forEach((file: File) => {
             submitFormData.append(`shareholder_${shareholderIndex}_sampleSignature`, file)
             totalFiles++
             console.log(`[v0] Added shareholder ${shareholderIndex + 1} sample signature:`, file.name, file.size, "bytes")
@@ -238,22 +250,22 @@ export default function BusinessRegistrationForm() {
       formData.trustees.forEach((trustee, trusteeIndex) => {
         console.log(`[v0] Processing trustee ${trusteeIndex + 1}:`, trustee.fullName)
 
-        if (trustee.idCard && trustee.idCard.length > 0) {
-          trustee.idCard.forEach((file: File) => {
+        if (trustee.files?.idCard && trustee.files.idCard.length > 0) {
+          trustee.files.idCard.forEach((file: File) => {
             submitFormData.append(`trustee_${trusteeIndex}_idCard`, file)
             totalFiles++
             console.log(`[v0] Added trustee ${trusteeIndex + 1} ID card:`, file.name, file.size, "bytes")
           })
         }
-        if (trustee.passportPhotograph && trustee.passportPhotograph.length > 0) {
-          trustee.passportPhotograph.forEach((file: File) => {
+        if (trustee.files?.passport && trustee.files.passport.length > 0) {
+          trustee.files.passport.forEach((file: File) => {
             submitFormData.append(`trustee_${trusteeIndex}_passportPhotograph`, file)
             totalFiles++
             console.log(`[v0] Added trustee ${trusteeIndex + 1} passport photo:`, file.name, file.size, "bytes")
           })
         }
-        if (trustee.sampleSignature && trustee.sampleSignature.length > 0) {
-          trustee.sampleSignature.forEach((file: File) => {
+        if (trustee.files?.signature && trustee.files.signature.length > 0) {
+          trustee.files.signature.forEach((file: File) => {
             submitFormData.append(`trustee_${trusteeIndex}_sampleSignature`, file)
             totalFiles++
             console.log(`[v0] Added trustee ${trusteeIndex + 1} sample signature:`, file.name, file.size, "bytes")
@@ -301,22 +313,44 @@ export default function BusinessRegistrationForm() {
         console.log("[v0] SUCCESS: Form submitted successfully")
         
         toast.success("Form submitted successfully!", {
-          description: "Your documents have been uploaded to Dropbox and organized in folders.",
+          description: "Your application has been received and is being processed.",
           duration: 5000,
         })
 
-        // Show success message with links
-        const successMessage = `
-          Your application has been submitted successfully!
-          
-          📁 Documents Folder: ${result.data.folderLink}
-          📄 Summary Document: ${result.data.docLink || 'Created in folder'}
-          
-          All files have been uploaded to Dropbox and organized for easy access.
-          We will contact you shortly to proceed with your registration.
-        `
-
-        alert(successMessage)
+        // Show clean success message
+        setShowSuccessModal(true)
+        
+        // Reset form after successful submission
+        setTimeout(() => {
+          setCurrentStep(0)
+          setFormData({
+            registrationType: "",
+            businessName: "",
+            organizationName: "",
+            email: "",
+            phone: "",
+            businessAddress: "",
+            organizationEmail: "",
+            organizationPhone: "",
+            officeAddress: "",
+            totalShares: undefined,
+            keyObjectives: "",
+            trusteeTenure: "",
+            sealCustodian: "",
+            fundingSources: "",
+            proposedName1: "",
+            proposedName2: "",
+            natureOfBusiness: "",
+            directorName: "",
+            directorNIN: "",
+            directorPhone: "",
+            directors: [],
+            shareholders: [],
+            trustees: [],
+            passportPhotograph: [],
+            sampleSignature: [],
+          })
+        }, 3000)
         console.log("[v0] Form submitted successfully:", result.data)
       } else {
         console.error("[v0] API returned error:", result.message, result.error)
@@ -1094,38 +1128,83 @@ export default function BusinessRegistrationForm() {
                     </div>
                   </div>
 
+                  {/* Organization Details for Trustees */}
+                  {formData.registrationType === "trustees" && (
+                    <div className="form-section">
+                      <h3 className="section-title">Organization Details</h3>
+                      <div className="bg-secondary/50 p-4 rounded-lg">
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 text-sm">
+                          <div>
+                            <span className="font-medium text-foreground">Organization Name:</span>
+                            <p className="text-muted-foreground mt-1">{formData.organizationName || "Not provided"}</p>
+                          </div>
+                          <div>
+                            <span className="font-medium text-foreground">Office Address:</span>
+                            <p className="text-muted-foreground mt-1">{formData.officeAddress || "Not provided"}</p>
+                          </div>
+                          <div>
+                            <span className="font-medium text-foreground">Organization Email:</span>
+                            <p className="text-muted-foreground mt-1">{formData.organizationEmail || "Not provided"}</p>
+                          </div>
+                          <div>
+                            <span className="font-medium text-foreground">Organization Phone:</span>
+                            <p className="text-muted-foreground mt-1">{formData.organizationPhone || "Not provided"}</p>
+                          </div>
+                          <div className="lg:col-span-2">
+                            <span className="font-medium text-foreground">Key Objectives:</span>
+                            <p className="text-muted-foreground mt-1">{formData.keyObjectives || "Not provided"}</p>
+                          </div>
+                          <div>
+                            <span className="font-medium text-foreground">Trustee Tenure Period:</span>
+                            <p className="text-muted-foreground mt-1">{formData.trusteeTenure || "Not provided"}</p>
+                          </div>
+                          <div>
+                            <span className="font-medium text-foreground">Seal Custodian:</span>
+                            <p className="text-muted-foreground mt-1">{formData.sealCustodian || "Not provided"}</p>
+                          </div>
+                          <div className="lg:col-span-2">
+                            <span className="font-medium text-foreground">Funding Sources:</span>
+                            <p className="text-muted-foreground mt-1">{formData.fundingSources || "Not provided"}</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   {/* BN Specific Information */}
                   {formData.registrationType === "bn" && (
                     <div className="form-section">
                       <h3 className="section-title">Director Information</h3>
-                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 text-sm">
-                        <div>
-                          <span className="font-medium text-foreground">Director Name:</span>
-                          <p className="text-muted-foreground mt-1">{formData.directorName || "Not provided"}</p>
-                        </div>
-                        <div>
-                          <span className="font-medium text-foreground">Director NIN:</span>
-                          <p className="text-muted-foreground mt-1">{formData.directorNIN || "Not provided"}</p>
-                        </div>
-                        <div>
-                          <span className="font-medium text-foreground">Director Phone:</span>
-                          <p className="text-muted-foreground mt-1">{formData.directorPhone || "Not provided"}</p>
-                        </div>
-                        <div>
-                          <span className="font-medium text-foreground">Passport Photo:</span>
-                          <p className="text-muted-foreground mt-1">
-                            {formData.passportPhoto && formData.passportPhoto.length > 0 
-                              ? `${formData.passportPhoto.length} file(s) uploaded` 
-                              : "Not uploaded"}
-                          </p>
-                        </div>
-                        <div>
-                          <span className="font-medium text-foreground">Sample Signature:</span>
-                          <p className="text-muted-foreground mt-1">
-                            {formData.sampleSignature && formData.sampleSignature.length > 0 
-                              ? `${formData.sampleSignature.length} file(s) uploaded` 
-                              : "Not uploaded"}
-                          </p>
+                      <div className="bg-secondary/50 p-4 rounded-lg">
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 text-sm">
+                          <div>
+                            <span className="font-medium text-foreground">Director Full Name:</span>
+                            <p className="text-muted-foreground mt-1">{formData.directorName || "Not provided"}</p>
+                          </div>
+                          <div>
+                            <span className="font-medium text-foreground">Director NIN:</span>
+                            <p className="text-muted-foreground mt-1">{formData.directorNIN || "Not provided"}</p>
+                          </div>
+                          <div>
+                            <span className="font-medium text-foreground">Director Phone Number:</span>
+                            <p className="text-muted-foreground mt-1">{formData.directorPhone || "Not provided"}</p>
+                          </div>
+                          <div>
+                            <span className="font-medium text-foreground">Passport Photograph:</span>
+                            <p className="text-muted-foreground mt-1">
+                              {formData.passportPhoto && formData.passportPhoto.length > 0 
+                                ? `${formData.passportPhoto.length} file(s) uploaded - ${formData.passportPhoto.map(f => f.name).join(', ')}` 
+                                : "Not uploaded"}
+                            </p>
+                          </div>
+                          <div>
+                            <span className="font-medium text-foreground">Sample Signature:</span>
+                            <p className="text-muted-foreground mt-1">
+                              {formData.sampleSignature && formData.sampleSignature.length > 0 
+                                ? `${formData.sampleSignature.length} file(s) uploaded - ${formData.sampleSignature.map(f => f.name).join(', ')}` 
+                                : "Not uploaded"}
+                            </p>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -1245,16 +1324,55 @@ export default function BusinessRegistrationForm() {
                                   <p className="text-muted-foreground">{trustee.email || "Not provided"}</p>
                                 </div>
                                 <div>
-                                  <span className="font-medium">Phone:</span>
-                                  <p className="text-muted-foreground">{trustee.phoneNumber || "Not provided"}</p>
+                                  <span className="font-medium">Phone Number:</span>
+                                  <p className="text-muted-foreground">{trustee.phoneNumber || trustee.phone || "Not provided"}</p>
                                 </div>
                                 <div>
                                   <span className="font-medium">Date of Birth:</span>
                                   <p className="text-muted-foreground">{trustee.dateOfBirth || "Not provided"}</p>
                                 </div>
+                                <div>
+                                  <span className="font-medium">NIN Number:</span>
+                                  <p className="text-muted-foreground">{trustee.nin || "Not provided"}</p>
+                                </div>
+                                <div>
+                                  <span className="font-medium">Trustee Position:</span>
+                                  <p className="text-muted-foreground">{trustee.position || "Not provided"}</p>
+                                </div>
                                 <div className="lg:col-span-2">
                                   <span className="font-medium">Residential Address:</span>
                                   <p className="text-muted-foreground">{trustee.residentialAddress || "Not provided"}</p>
+                                </div>
+                              </div>
+                              
+                              {/* File Upload Information for Trustees */}
+                              <div className="mt-4 pt-3 border-t border-muted">
+                                <h5 className="font-medium text-foreground mb-2">Uploaded Documents</h5>
+                                <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 text-sm">
+                                  <div>
+                                    <span className="font-medium">ID Card:</span>
+                                    <p className="text-muted-foreground">
+                                      {trustee.files?.idCard && trustee.files.idCard.length > 0 
+                                        ? `${trustee.files.idCard.length} file(s) uploaded - ${trustee.files.idCard.map((f: File) => f.name).join(', ')}` 
+                                        : "Not uploaded"}
+                                    </p>
+                                  </div>
+                                  <div>
+                                    <span className="font-medium">Passport Photograph:</span>
+                                    <p className="text-muted-foreground">
+                                      {trustee.files?.passport && trustee.files.passport.length > 0 
+                                        ? `${trustee.files.passport.length} file(s) uploaded - ${trustee.files.passport.map((f: File) => f.name).join(', ')}` 
+                                        : "Not uploaded"}
+                                    </p>
+                                  </div>
+                                  <div>
+                                    <span className="font-medium">Sample Signature:</span>
+                                    <p className="text-muted-foreground">
+                                      {trustee.files?.signature && trustee.files.signature.length > 0 
+                                        ? `${trustee.files.signature.length} file(s) uploaded - ${trustee.files.signature.map((f: File) => f.name).join(', ')}` 
+                                        : "Not uploaded"}
+                                    </p>
+                                  </div>
                                 </div>
                               </div>
                             </div>
@@ -1277,14 +1395,6 @@ export default function BusinessRegistrationForm() {
                         </p>
                       </div>
                     </div>
-                  </div>
-
-                  <div className="flex items-center justify-center space-x-3 text-sm bg-secondary border border-primary/20 p-3 sm:p-4 rounded-lg">
-                    <Shield className="h-4 w-4 sm:h-5 sm:w-5 text-primary flex-shrink-0" />
-                    <span className="font-medium text-secondary-foreground">
-                      All information you share is kept strictly confidential and used only for your registration
-                      process.
-                    </span>
                   </div>
 
                   <div className="flex flex-col sm:flex-row justify-between gap-3 sm:gap-0 pt-4 sm:pt-6">
@@ -1314,6 +1424,56 @@ export default function BusinessRegistrationForm() {
           </>
         )}
       </main>
+
+      {/* Success Modal */}
+      {showSuccessModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 overflow-hidden animate-in fade-in-0 zoom-in-95 duration-300">
+            {/* Header with success icon */}
+            <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-6 text-center">
+              <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7"></path>
+                </svg>
+              </div>
+              <h3 className="text-2xl font-bold text-white mb-2">Success!</h3>
+              <p className="text-green-100">Your application has been submitted</p>
+            </div>
+
+            {/* Content */}
+            <div className="p-6 text-center">
+              <div className="space-y-4">
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                  <p className="text-green-800 font-medium mb-2">✅ Application Received</p>
+                  <p className="text-green-700 text-sm">We have successfully received your business registration application and all required documents.</p>
+                </div>
+
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <p className="text-blue-800 font-medium mb-2">⏰ What's Next?</p>
+                  <p className="text-blue-700 text-sm">Our team will review your submission and contact you within 2-3 business days to proceed with your registration.</p>
+                </div>
+
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                  <p className="text-amber-800 font-medium mb-2">📞 Need Help?</p>
+                  <p className="text-amber-700 text-sm">If you have any questions, feel free to contact our support team.</p>
+                </div>
+              </div>
+
+              {/* Close button */}
+              <div className="mt-6">
+                <Button 
+                  onClick={() => setShowSuccessModal(false)}
+                  className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-medium py-3 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl"
+                >
+                  Continue
+                </Button>
+              </div>
+
+              <p className="text-xs text-gray-500 mt-4">Thank you for choosing our services!</p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
