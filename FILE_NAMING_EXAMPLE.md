@@ -48,7 +48,7 @@ Each uploaded file is now renamed with clear identification of the person and do
 5. **Professional Naming**: Clean, consistent naming convention
 
 ## Example Complete Structure
-```
+\`\`\`
 /BIZDOC Applications/
   └── ABC_Company_Ltd_2025-08-23/
       ├── Directors/
@@ -68,4 +68,4 @@ Each uploaded file is now renamed with clear identification of the person and do
       │   ├── Board_Resolution_resolution.pdf
       │   └── Constitution_Document_constitution.pdf
       └── Business_Registration_Form_ABC_Company_Ltd.txt
-```
+\`\`\`

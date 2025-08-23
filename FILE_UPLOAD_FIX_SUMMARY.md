@@ -5,7 +5,7 @@ Image uploads were not working for Company Limited registration because of a dat
 
 ## Root Cause
 The `DynamicPersonForm` component stores uploaded files in a nested structure:
-```javascript
+\`\`\`javascript
 person = {
   fullName: "...",
   email: "...",
@@ -15,36 +15,36 @@ person = {
     signature: [File]
   }
 }
-```
+\`\`\`
 
 But the `handleSubmit` function was trying to access files directly:
-```javascript
+\`\`\`javascript
 // This was failing:
 director.idCard
 director.passportPhotograph
 director.sampleSignature
-```
+\`\`\`
 
 ## Fix Applied
 Updated the `handleSubmit` function in `app/page.tsx` to access files from the correct nested structure:
 
 ### Before (Not Working):
-```javascript
+\`\`\`javascript
 if (director.idCard && director.idCard.length > 0) {
   director.idCard.forEach((file: File) => {
     submitFormData.append(`director_${directorIndex}_idCard`, file)
   })
 }
-```
+\`\`\`
 
 ### After (Working):
-```javascript
+\`\`\`javascript
 if (director.files?.idCard && director.files.idCard.length > 0) {
   director.files.idCard.forEach((file: File) => {
     submitFormData.append(`director_${directorIndex}_idCard`, file)
   })
 }
-```
+\`\`\`
 
 ## Changes Made
 1. **Directors**: Updated file access to use `director.files.idCard`, `director.files.passport`, `director.files.signature`

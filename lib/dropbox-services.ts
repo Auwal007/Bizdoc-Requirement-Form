@@ -1,4 +1,4 @@
-import { Dropbox } from 'dropbox'
+import { Dropbox } from "dropbox"
 
 export interface FormData {
   registrationType: string
@@ -15,6 +15,7 @@ export interface FormData {
   // Business Name specific fields
   proposedName1?: string
   proposedName2?: string
+  proposedName3?: string
   natureOfBusiness?: string
   directorName?: string
   directorNIN?: string
@@ -64,40 +65,55 @@ export interface UploadedFile {
 // Helper function to convert technical field names to readable document types
 function getReadableFileType(fileType: string): string {
   const typeMap: { [key: string]: string } = {
-    'idCard': 'ID_Card',
-    'passportPhotograph': 'Passport_Photo',
-    'sampleSignature': 'Sample_Signature',
-    'memart': 'Memorandum_Articles',
-    'boardResolution': 'Board_Resolution',
-    'constitutionDocument': 'Constitution_Document',
-    'birthCertificate': 'Birth_Certificate',
-    'utilityBill': 'Utility_Bill',
-    'bankStatement': 'Bank_Statement',
-    'proofOfAddress': 'Proof_of_Address'
+    idCard: "ID_Card",
+    passportPhotograph: "Passport_Photo",
+    sampleSignature: "Sample_Signature",
+    memart: "Memorandum_Articles",
+    boardResolution: "Board_Resolution",
+    constitutionDocument: "Constitution_Document",
+    birthCertificate: "Birth_Certificate",
+    utilityBill: "Utility_Bill",
+    bankStatement: "Bank_Statement",
+    proofOfAddress: "Proof_of_Address",
   }
   return typeMap[fileType] || fileType.toUpperCase()
 }
 
 // Initialize Dropbox with access token
-const dbx = new Dropbox({ 
+if (!process.env.DROPBOX_ACCESS_TOKEN) {
+  throw new Error("DROPBOX_ACCESS_TOKEN environment variable is required")
+}
+
+const dbx = new Dropbox({
   accessToken: process.env.DROPBOX_ACCESS_TOKEN,
-  fetch: fetch
+  fetch: fetch,
 })
 
-export async function createDropboxFolder(name: string, parentPath: string = ''): Promise<string> {
+function sanitizeFileName(name: string): string {
+  return name
+    .replace(/[^a-zA-Z0-9\s\-_.]/g, "") // Remove special characters
+    .replace(/\s+/g, "_") // Replace spaces with underscores
+    .substring(0, 100) // Limit length
+}
+
+function safeParseInt(value: string, fallback = 0): number {
+  const parsed = Number.parseInt(value, 10)
+  return isNaN(parsed) ? fallback : parsed
+}
+
+export async function createDropboxFolder(name: string, parentPath = ""): Promise<string> {
   try {
-    const folderPath = parentPath ? `${parentPath}/${name}` : `/${name}`
-    console.log(`[v0] Creating Dropbox folder: ${folderPath}`)
+    const sanitizedName = sanitizeFileName(name)
+    const folderPath = parentPath ? `${parentPath}/${sanitizedName}` : `/${sanitizedName}`
 
     await dbx.filesCreateFolderV2({
       path: folderPath,
-      autorename: true
+      autorename: true,
     })
 
-    console.log(`[v0] Dropbox folder created successfully: ${folderPath}`)
     return folderPath
   } catch (error) {
-    console.error('[v0] Error creating Dropbox folder:', error)
+    console.error("[DROPBOX] Error creating folder:", error)
     throw error
   }
 }
@@ -113,63 +129,66 @@ export async function uploadFilesToDropbox(
     const uploadedFiles = []
 
     for (const file of files) {
-      // Organize files into subfolders based on type and person
       let targetPath = folderPath
-      let fileName = file.fileName
+      let fileName = sanitizeFileName(file.fileName)
 
       // Create organized folder structure with person names
-      if (file.fieldName.startsWith('director_')) {
-        const parts = file.fieldName.split('_')
-        const directorIndex = parseInt(parts[1])
+      if (file.fieldName.startsWith("director_")) {
+        const parts = file.fieldName.split("_")
+        if (parts.length < 3) continue
+        const directorIndex = safeParseInt(parts[1])
         const fileType = parts[2]
         const directorName = formData?.directors?.[directorIndex]?.fullName || `Director_${directorIndex + 1}`
         // Clean name for filename (remove special characters)
-        const cleanName = directorName.replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '_')
+        const cleanName = sanitizeFileName(directorName)
         // Convert fileType to readable format
         const readableFileType = getReadableFileType(fileType)
         targetPath = `${folderPath}/Directors/Director_${directorIndex + 1}_${cleanName}`
-        fileName = `${readableFileType}_${cleanName}_${file.fileName}`
+        fileName = `${readableFileType}_${cleanName}_${sanitizeFileName(file.fileName)}`
         console.log(`[v0] Director file: ${directorName} (${readableFileType}) -> ${fileName}`)
-      } else if (file.fieldName.startsWith('shareholder_')) {
-        const parts = file.fieldName.split('_')
-        const shareholderIndex = parseInt(parts[1])
+      } else if (file.fieldName.startsWith("shareholder_")) {
+        const parts = file.fieldName.split("_")
+        if (parts.length < 3) continue
+        const shareholderIndex = safeParseInt(parts[1])
         const fileType = parts[2]
-        const shareholderName = formData?.shareholders?.[shareholderIndex]?.fullName || `Shareholder_${shareholderIndex + 1}`
+        const shareholderName =
+          formData?.shareholders?.[shareholderIndex]?.fullName || `Shareholder_${shareholderIndex + 1}`
         // Clean name for filename (remove special characters)
-        const cleanName = shareholderName.replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '_')
+        const cleanName = sanitizeFileName(shareholderName)
         // Convert fileType to readable format
         const readableFileType = getReadableFileType(fileType)
         targetPath = `${folderPath}/Shareholders/Shareholder_${shareholderIndex + 1}_${cleanName}`
-        fileName = `${readableFileType}_${cleanName}_${file.fileName}`
+        fileName = `${readableFileType}_${cleanName}_${sanitizeFileName(file.fileName)}`
         console.log(`[v0] Shareholder file: ${shareholderName} (${readableFileType}) -> ${fileName}`)
-      } else if (file.fieldName.startsWith('trustee_')) {
-        const parts = file.fieldName.split('_')
-        const trusteeIndex = parseInt(parts[1])
+      } else if (file.fieldName.startsWith("trustee_")) {
+        const parts = file.fieldName.split("_")
+        if (parts.length < 3) continue
+        const trusteeIndex = safeParseInt(parts[1])
         const fileType = parts[2]
         const trusteeName = formData?.trustees?.[trusteeIndex]?.fullName || `Trustee_${trusteeIndex + 1}`
         // Clean name for filename (remove special characters)
-        const cleanName = trusteeName.replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '_')
+        const cleanName = sanitizeFileName(trusteeName)
         // Convert fileType to readable format
         const readableFileType = getReadableFileType(fileType)
         targetPath = `${folderPath}/Trustees/Trustee_${trusteeIndex + 1}_${cleanName}`
-        fileName = `${readableFileType}_${cleanName}_${file.fileName}`
+        fileName = `${readableFileType}_${cleanName}_${sanitizeFileName(file.fileName)}`
         console.log(`[v0] Trustee file: ${trusteeName} (${readableFileType}) -> ${fileName}`)
       } else {
         // Regular files go into a general Documents folder
         const readableFileType = getReadableFileType(file.fieldName)
         targetPath = `${folderPath}/Documents`
-        fileName = `${readableFileType}_${file.fileName}`
+        fileName = `${readableFileType}_${sanitizeFileName(file.fileName)}`
       }
 
       const filePath = `${targetPath}/${fileName}`
-      
+
       try {
         // Create the subfolder if it doesn't exist
         if (targetPath !== folderPath) {
           try {
             await dbx.filesCreateFolderV2({
               path: targetPath,
-              autorename: false
+              autorename: false,
             })
           } catch (folderError: any) {
             // Folder might already exist, ignore error
@@ -181,8 +200,8 @@ export async function uploadFilesToDropbox(
         await dbx.filesUpload({
           path: filePath,
           contents: file.buffer,
-          mode: { '.tag': 'add' } as any,
-          autorename: true
+          mode: { ".tag": "add" } as any,
+          autorename: true,
         })
 
         console.log(`[v0] File uploaded to Dropbox: ${fileName} -> ${filePath}`)
@@ -193,8 +212,8 @@ export async function uploadFilesToDropbox(
           const shareResponse = await dbx.sharingCreateSharedLinkWithSettings({
             path: filePath,
             settings: {
-              requested_visibility: { '.tag': 'public' }
-            }
+              requested_visibility: { ".tag": "public" },
+            },
           })
           shareUrl = shareResponse.result.url
         } catch (shareError) {
@@ -204,7 +223,7 @@ export async function uploadFilesToDropbox(
         uploadedFiles.push({
           fileName: file.fileName,
           filePath: filePath,
-          shareUrl: shareUrl
+          shareUrl: shareUrl,
         })
 
         console.log(`[v0] File uploaded to Dropbox: ${file.fileName}`)
@@ -216,7 +235,7 @@ export async function uploadFilesToDropbox(
 
     return uploadedFiles
   } catch (error) {
-    console.error('[v0] Error uploading files to Dropbox:', error)
+    console.error("[v0] Error uploading files to Dropbox:", error)
     throw error
   }
 }
@@ -227,59 +246,56 @@ export async function createDropboxDocument(
 ): Promise<{ filePath: string; shareUrl?: string }> {
   try {
     const businessName = formData.businessName || formData.organizationName || "Unknown Business"
-    const fileName = `${businessName} - Registration Form Data.txt`
+    const fileName = `${sanitizeFileName(businessName)} - Registration Form Data.txt`
     const filePath = `${folderPath}/${fileName}`
 
     console.log(`[v0] Creating Dropbox document: ${filePath}`)
-    console.log(`[v0] Form data received:`, {
-      registrationType: formData.registrationType,
-      businessName: formData.businessName,
-      directors: formData.directors?.length || 0,
-      shareholders: formData.shareholders?.length || 0,
-      trustees: formData.trustees?.length || 0
-    })
 
-    // Generate comprehensive document content
     let content = `BIZDOC CONSULT - BUSINESS REGISTRATION FORM\n`
     content += `================================================\n\n`
-    
-    // Basic Business Information
+    content += `Submission Date: ${new Date().toLocaleString()}\n`
+    content += `Registration Type: ${formData.registrationType?.toUpperCase()}\n\n`
+
+    // Business Information Section
     content += `BUSINESS INFORMATION:\n`
     content += `---------------------\n`
-    if (formData.businessName) {
-      content += `Business Name: ${formData.businessName}\n`
-    }
-    if (formData.organizationName) {
-      content += `Organization Name: ${formData.organizationName}\n`
-    }
 
-    // Business Name specific fields
-    if (formData.registrationType === 'bn') {
+    if (formData.registrationType === "trustees") {
+      if (formData.organizationName) {
+        content += `Organization Name: ${formData.organizationName}\n`
+      }
+    } else {
       if (formData.proposedName1) {
         content += `Proposed Name 1: ${formData.proposedName1}\n`
       }
       if (formData.proposedName2) {
         content += `Proposed Name 2: ${formData.proposedName2}\n`
       }
+      if (formData.proposedName3) {
+        content += `Proposed Name 3: ${formData.proposedName3}\n`
+      }
       if (formData.natureOfBusiness) {
         content += `Nature of Business: ${formData.natureOfBusiness}\n`
       }
     }
 
-    content += `Registration Type: ${formData.registrationType}\n`
     content += `Email: ${formData.email}\n`
     content += `Phone Number: ${formData.phoneNumber}\n`
     content += `Office Address: ${formData.officeAddress}\n\n`
 
-    // Additional Information based on registration type
-    if (formData.totalShares || formData.keyObjectives || formData.trusteeTenure || formData.sealCustodian || formData.fundingSources) {
-      content += `ADDITIONAL INFORMATION:\n`
-      content += `-----------------------\n`
+    // Registration Type Specific Information
+    if (formData.registrationType === "company") {
+      content += `COMPANY INFORMATION:\n`
+      content += `--------------------\n`
       if (formData.totalShares) {
         content += `Total Shares: ${formData.totalShares}\n`
       }
+      content += `\n`
+    } else if (formData.registrationType === "trustees") {
+      content += `ORGANIZATION INFORMATION:\n`
+      content += `-------------------------\n`
       if (formData.keyObjectives) {
-        content += `Key Objectives: ${formData.keyObjectives}\n`
+        content += `Key Objectives:\n${formData.keyObjectives}\n\n`
       }
       if (formData.trusteeTenure) {
         content += `Trustee Tenure: ${formData.trusteeTenure}\n`
@@ -288,18 +304,16 @@ export async function createDropboxDocument(
         content += `Seal Custodian: ${formData.sealCustodian}\n`
       }
       if (formData.fundingSources) {
-        content += `Funding Sources: ${formData.fundingSources}\n`
+        content += `Funding Sources:\n${formData.fundingSources}\n`
       }
       content += `\n`
     }
 
-    // Add directors information
-    if (formData.registrationType === 'bn' && (formData.directorName || formData.directorNIN || formData.directorPhone)) {
-      content += `DIRECTOR INFORMATION (Business Name):\n`
-      content += `-------------------------------------\n`
-      if (formData.directorName) {
-        content += `Director Name: ${formData.directorName}\n`
-      }
+    // Business Name Director Information
+    if (formData.registrationType === "bn" && formData.directorName) {
+      content += `DIRECTOR INFORMATION:\n`
+      content += `---------------------\n`
+      content += `Director Name: ${formData.directorName}\n`
       if (formData.directorNIN) {
         content += `Director NIN: ${formData.directorNIN}\n`
       }
@@ -309,7 +323,7 @@ export async function createDropboxDocument(
       content += `\n`
     }
 
-    // Add directors information (for Company Limited and Trustees)
+    // Directors Information (Company Limited)
     if (formData.directors && formData.directors.length > 0) {
       content += `DIRECTORS INFORMATION:\n`
       content += `----------------------\n`
@@ -324,7 +338,7 @@ export async function createDropboxDocument(
       })
     }
 
-    // Add shareholders information
+    // Shareholders Information
     if (formData.shareholders && formData.shareholders.length > 0) {
       content += `SHAREHOLDERS INFORMATION:\n`
       content += `-------------------------\n`
@@ -340,7 +354,7 @@ export async function createDropboxDocument(
       })
     }
 
-    // Add trustees information
+    // Trustees Information
     if (formData.trustees && formData.trustees.length > 0) {
       content += `TRUSTEES INFORMATION:\n`
       content += `---------------------\n`
@@ -359,15 +373,16 @@ export async function createDropboxDocument(
 
     content += `SUBMISSION DETAILS:\n`
     content += `-------------------\n`
-    content += `Submission Date: ${new Date().toLocaleString()}\n`
     content += `Form System: BIZDOC Online Registration Platform\n`
+    content += `Processed by: Comprehensive Backend System\n`
+    content += `Status: Successfully Submitted\n`
 
     // Upload the document to Dropbox
     await dbx.filesUpload({
       path: filePath,
       contents: content,
-      mode: { '.tag': 'add' } as any,
-      autorename: true
+      mode: { ".tag": "add" } as any,
+      autorename: true,
     })
 
     // Try to create a shared link
@@ -376,8 +391,8 @@ export async function createDropboxDocument(
       const shareResponse = await dbx.sharingCreateSharedLinkWithSettings({
         path: filePath,
         settings: {
-          requested_visibility: { '.tag': 'public' }
-        }
+          requested_visibility: { ".tag": "public" },
+        },
       })
       shareUrl = shareResponse.result.url
     } catch (shareError) {
@@ -387,10 +402,10 @@ export async function createDropboxDocument(
     console.log(`[v0] Document created successfully in Dropbox: ${filePath}`)
     return {
       filePath: filePath,
-      shareUrl: shareUrl
+      shareUrl: shareUrl,
     }
   } catch (error) {
-    console.error('[v0] Error creating Dropbox document:', error)
+    console.error("[v0] Error creating Dropbox document:", error)
     throw error
   }
 }
@@ -400,8 +415,8 @@ export async function getDropboxFolderLink(folderPath: string): Promise<string> 
     const shareResponse = await dbx.sharingCreateSharedLinkWithSettings({
       path: folderPath,
       settings: {
-        requested_visibility: { '.tag': 'public' }
-      }
+        requested_visibility: { ".tag": "public" },
+      },
     })
     return shareResponse.result.url
   } catch (error) {

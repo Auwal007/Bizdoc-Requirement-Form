@@ -8,7 +8,7 @@ The preview section for Incorporated Trustees registration was missing comprehen
 ### 1. **Complete Organization Details Section**
 Added a dedicated "Organization Details" section showcasing all organization-specific information:
 
-```
+\`\`\`
 Organization Details
 ├── Organization Name
 ├── Office Address  
@@ -18,7 +18,7 @@ Organization Details
 ├── Trustee Tenure Period
 ├── Seal Custodian
 └── Funding Sources
-```
+\`\`\`
 
 ### 2. **Enhanced Trustees Information Display**
 **Previous Trustees Display:**
@@ -44,12 +44,12 @@ Organization Details
 ### 3. **File Upload Information for Each Trustee**
 Now shows detailed file upload status with actual file names:
 
-```
+\`\`\`
 Uploaded Documents
 ├── ID Card: 1 file(s) uploaded - john_id_card.pdf
 ├── Passport Photograph: 2 file(s) uploaded - passport1.jpg, passport2.png
 └── Sample Signature: 1 file(s) uploaded - signature.pdf
-```
+\`\`\`
 
 ### 4. **File Upload Verification**
 ✅ **Confirmed Working**: The file upload logic for trustees was already correctly implemented:
@@ -92,15 +92,15 @@ For each trustee:
 ## Technical Implementation
 
 ### File Upload Structure Verification
-```javascript
+\`\`\`javascript
 // CONFIRMED WORKING - No issues found
 trustee.files?.idCard     → trustee_0_idCard
 trustee.files?.passport   → trustee_0_passportPhotograph  
 trustee.files?.signature  → trustee_0_sampleSignature
-```
+\`\`\`
 
 ### Preview Enhancement Code
-```jsx
+\`\`\`jsx
 // Added Organization Details section
 {formData.registrationType === "trustees" && (
   <div className="form-section">
@@ -119,7 +119,7 @@ trustee.files?.signature  → trustee_0_sampleSignature
     </div>
   </div>
 ))}
-```
+\`\`\`
 
 ## Benefits Achieved
 

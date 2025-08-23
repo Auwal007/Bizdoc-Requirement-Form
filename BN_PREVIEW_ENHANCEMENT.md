@@ -12,16 +12,16 @@ The preview section for Business Name registration was not showing comprehensive
 
 ### 2. Enhanced File Information Display
 **Before:**
-```
+\`\`\`
 Passport Photo: 2 file(s) uploaded
 Sample Signature: 1 file(s) uploaded
-```
+\`\`\`
 
 **After:**
-```
+\`\`\`
 Passport Photograph: 2 file(s) uploaded - photo1.jpg, photo2.png
 Sample Signature: 1 file(s) uploaded - signature.pdf
-```
+\`\`\`
 
 ### 3. More Descriptive Labels
 - "Director Name" → "Director Full Name"

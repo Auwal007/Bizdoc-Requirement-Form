@@ -15,6 +15,7 @@ interface FormData {
   registrationType: "bn" | "company" | "trustees" | ""
   proposedName1: string
   proposedName2: string
+  proposedName3: string
   businessAddress: string
   email: string
   phone: string
@@ -52,6 +53,7 @@ export default function BusinessRegistrationForm() {
     registrationType: "",
     proposedName1: "",
     proposedName2: "",
+    proposedName3: "",
     businessAddress: "",
     email: "",
     phone: "",
@@ -75,6 +77,7 @@ export default function BusinessRegistrationForm() {
     fundingSources: "",
     trustees: [],
   })
+  const [submissionResult, setSubmissionResult] = useState(null)
 
   const updateFormData = (field: keyof FormData, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
@@ -93,295 +96,178 @@ export default function BusinessRegistrationForm() {
   }
 
   const handleSubmit = async () => {
-    console.log("[v0] === FORM SUBMISSION DEBUG START ===")
-    console.log("[v0] Current step:", currentStep)
-    console.log("[v0] Registration type:", formData.registrationType)
-
     if (!formData.registrationType) {
-      console.log("[v0] ERROR: No registration type selected")
       toast.error("Please select a registration type")
       return
     }
 
-    // Validate required fields based on registration type
     if (formData.registrationType === "trustees") {
-      if (!formData.organizationName || !formData.organizationEmail) {
-        console.log("[v0] ERROR: Missing required trustees fields")
+      if (!formData.organizationName || !formData.organizationEmail || !formData.organizationPhone) {
         toast.error("Please fill in all required organization details")
         return
       }
-    } else {
-      if (!formData.proposedName1 || !formData.email) {
-        console.log("[v0] ERROR: Missing required business fields")
-        toast.error("Please fill in all required business details")
+      if (formData.trustees.length === 0) {
+        toast.error("Please add at least one trustee")
         return
+      }
+    } else {
+      if (
+        !formData.proposedName1 ||
+        !formData.proposedName2 ||
+        !formData.proposedName3 ||
+        !formData.email ||
+        !formData.phone
+      ) {
+        toast.error("Please fill in all required business details including all three proposed names")
+        return
+      }
+
+      if (formData.registrationType === "bn") {
+        if (!formData.directorName || !formData.directorNIN || !formData.directorPhone) {
+          toast.error("Please fill in all director information for Business Name registration")
+          return
+        }
+      } else if (formData.registrationType === "company") {
+        if (formData.directors.length === 0) {
+          toast.error("Please add at least one director for Company Limited registration")
+          return
+        }
+        if (formData.shareholders.length === 0) {
+          toast.error("Please add at least one shareholder for Company Limited registration")
+          return
+        }
+        if (!formData.totalShares || formData.totalShares <= 0) {
+          toast.error("Please specify the total number of shares")
+          return
+        }
       }
     }
 
-    console.log("[v0] Validation passed, proceeding with submission...")
     setIsSubmitting(true)
 
     try {
-      console.log("[v0] Starting form submission...")
-      console.log("[v0] Form data:", JSON.stringify(formData, null, 2))
-
       if (!navigator.onLine) {
         throw new Error("No internet connection. Please check your network and try again.")
       }
 
-      // Create FormData for file uploads
+      console.log("[v0] Starting form submission...")
+      console.log("[v0] Registration type:", formData.registrationType)
+      console.log("[v0] Form data:", {
+        registrationType: formData.registrationType,
+        proposedNames: [formData.proposedName1, formData.proposedName2, formData.proposedName3],
+        directorsCount: formData.directors.length,
+        shareholdersCount: formData.shareholders.length,
+        trusteesCount: formData.trustees.length,
+      })
+
       const submitFormData = new FormData()
 
-      // Add basic form data
-      submitFormData.append("registrationType", formData.registrationType)
-      submitFormData.append("businessName", formData.proposedName1 || formData.organizationName)
-      submitFormData.append("email", formData.email || formData.organizationEmail)
-      submitFormData.append("phoneNumber", formData.phone || formData.organizationPhone)
-      submitFormData.append("officeAddress", formData.businessAddress || formData.officeAddress)
-
-      console.log("[v0] Basic form data added to FormData")
-
-      if (formData.totalShares) {
-        submitFormData.append("totalShares", formData.totalShares.toString())
-      }
-
-      // Add Business Name-specific data
-      if (formData.registrationType === "bn") {
-        submitFormData.append("proposedName1", formData.proposedName1)
-        submitFormData.append("proposedName2", formData.proposedName2)
-        submitFormData.append("natureOfBusiness", formData.natureOfBusiness)
-        submitFormData.append("directorName", formData.directorName)
-        submitFormData.append("directorNIN", formData.directorNIN)
-        submitFormData.append("directorPhone", formData.directorPhone)
-        console.log("[v0] Business Name-specific data added")
-      }
-
-      // Add trustees-specific data
-      if (formData.registrationType === "trustees") {
-        submitFormData.append("organizationName", formData.organizationName)
-        submitFormData.append("keyObjectives", formData.keyObjectives)
-        submitFormData.append("trusteeTenure", formData.trusteeTenure)
-        submitFormData.append("sealCustodian", formData.sealCustodian)
-        submitFormData.append("fundingSources", formData.fundingSources)
-        console.log("[v0] Trustees-specific data added")
-      }
-
-      // Add directors, shareholders, trustees as JSON
-      if (formData.directors.length > 0) {
-        submitFormData.append("directors", JSON.stringify(formData.directors))
-        console.log("[v0] Directors data added:", formData.directors.length, "directors")
-      }
-      if (formData.shareholders.length > 0) {
-        submitFormData.append("shareholders", JSON.stringify(formData.shareholders))
-        console.log("[v0] Shareholders data added:", formData.shareholders.length, "shareholders")
-      }
-      if (formData.trustees.length > 0) {
-        submitFormData.append("trustees", JSON.stringify(formData.trustees))
-        console.log("[v0] Trustees data added:", formData.trustees.length, "trustees")
-      }
-
-      // Add files
-      let totalFiles = 0
-      formData.passportPhoto.forEach((file) => {
-        submitFormData.append("passportPhotograph", file)
-        totalFiles++
-        console.log("[v0] Added passport photo:", file.name, file.size, "bytes")
-      })
-      formData.sampleSignature.forEach((file) => {
-        submitFormData.append("sampleSignature", file)
-        totalFiles++
-        console.log("[v0] Added sample signature:", file.name, file.size, "bytes")
-      })
-
-        // Handle files from directors/shareholders/trustees with proper naming
-        formData.directors.forEach((director, directorIndex) => {
-          console.log(`[v0] Processing director ${directorIndex + 1}:`, director.fullName)
-
-          if (director.files?.idCard && director.files.idCard.length > 0) {
-            director.files.idCard.forEach((file: File) => {
-              submitFormData.append(`director_${directorIndex}_idCard`, file)
-              totalFiles++
-              console.log(`[v0] Added director ${directorIndex + 1} ID card:`, file.name, file.size, "bytes")
-            })
-          }
-          if (director.files?.passport && director.files.passport.length > 0) {
-            director.files.passport.forEach((file: File) => {
-              submitFormData.append(`director_${directorIndex}_passportPhotograph`, file)
-              totalFiles++
-              console.log(`[v0] Added director ${directorIndex + 1} passport photo:`, file.name, file.size, "bytes")
-            })
-          }
-          if (director.files?.signature && director.files.signature.length > 0) {
-            director.files.signature.forEach((file: File) => {
-              submitFormData.append(`director_${directorIndex}_sampleSignature`, file)
-              totalFiles++
-              console.log(`[v0] Added director ${directorIndex + 1} sample signature:`, file.name, file.size, "bytes")
-            })
-          }
-        })
-
-        formData.shareholders.forEach((shareholder, shareholderIndex) => {
-          console.log(`[v0] Processing shareholder ${shareholderIndex + 1}:`, shareholder.fullName)
-
-          if (shareholder.files?.idCard && shareholder.files.idCard.length > 0) {
-            shareholder.files.idCard.forEach((file: File) => {
-              submitFormData.append(`shareholder_${shareholderIndex}_idCard`, file)
-              totalFiles++
-              console.log(`[v0] Added shareholder ${shareholderIndex + 1} ID card:`, file.name, file.size, "bytes")
-            })
-          }
-          if (shareholder.files?.passport && shareholder.files.passport.length > 0) {
-            shareholder.files.passport.forEach((file: File) => {
-              submitFormData.append(`shareholder_${shareholderIndex}_passportPhotograph`, file)
-              totalFiles++
-              console.log(`[v0] Added shareholder ${shareholderIndex + 1} passport photo:`, file.name, file.size, "bytes")
-            })
-          }
-          if (shareholder.files?.signature && shareholder.files.signature.length > 0) {
-            shareholder.files.signature.forEach((file: File) => {
-              submitFormData.append(`shareholder_${shareholderIndex}_sampleSignature`, file)
-              totalFiles++
-              console.log(`[v0] Added shareholder ${shareholderIndex + 1} sample signature:`, file.name, file.size, "bytes")
-            })
-          }
-        })
-
-        formData.trustees.forEach((trustee, trusteeIndex) => {
-          console.log(`[v0] Processing trustee ${trusteeIndex + 1}:`, trustee.fullName)
-
-          if (trustee.files?.idCard && trustee.files.idCard.length > 0) {
-            trustee.files.idCard.forEach((file: File) => {
-              submitFormData.append(`trustee_${trusteeIndex}_idCard`, file)
-              totalFiles++
-              console.log(`[v0] Added trustee ${trusteeIndex + 1} ID card:`, file.name, file.size, "bytes")
-            })
-          }
-          if (trustee.files?.passport && trustee.files.passport.length > 0) {
-            trustee.files.passport.forEach((file: File) => {
-              submitFormData.append(`trustee_${trusteeIndex}_passportPhotograph`, file)
-              totalFiles++
-              console.log(`[v0] Added trustee ${trusteeIndex + 1} passport photo:`, file.name, file.size, "bytes")
-            })
-          }
-          if (trustee.files?.signature && trustee.files.signature.length > 0) {
-            trustee.files.signature.forEach((file: File) => {
-              submitFormData.append(`trustee_${trusteeIndex}_sampleSignature`, file)
-              totalFiles++
-              console.log(`[v0] Added trustee ${trusteeIndex + 1} sample signature:`, file.name, file.size, "bytes")
-            })
-          }
-        })
-
-        console.log("[v0] Total files added:", totalFiles)
-
-        console.log("[v0] FormData entries:")
-        for (const [key, value] of submitFormData.entries()) {
-          if (value instanceof File) {
-            console.log(`[v0] ${key}: File(${value.name}, ${value.size} bytes, ${value.type})`)
-          } else {
-            console.log(`[v0] ${key}:`, value)
-          }
-        }
-
-        console.log("[v0] Submitting form data to API...")
-        console.log("[v0] API endpoint: /api/submit-form")
-
-        const response = await fetch("/api/submit-form", {
-          method: "POST",
-          body: submitFormData,
-        })
-
-        console.log("[v0] API response received")
-        console.log("[v0] Response status:", response.status)
-        console.log("[v0] Response status text:", response.statusText)
-        console.log("[v0] Response ok:", response.ok)
-        console.log("[v0] Response headers:", Object.fromEntries(response.headers.entries()))
-
-        let result
-        try {
-          const responseText = await response.text()
-          console.log("[v0] Raw response text:", responseText)
-          result = JSON.parse(responseText)
-          console.log("[v0] Parsed response data:", result)
-        } catch (parseError) {
-          console.error("[v0] Failed to parse response as JSON:", parseError)
-          throw new Error(`Server returned invalid response: ${response.status} ${response.statusText}`)
-        }
-
-        if (result.success) {
-          console.log("[v0] SUCCESS: Form submitted successfully")
-          
-          toast.success("Form submitted successfully!", {
-            description: "Your application has been received and is being processed.",
-            duration: 5000,
+      // Add all form fields
+      Object.entries(formData).forEach(([key, value]) => {
+        if (key === "directors" || key === "shareholders" || key === "trustees") {
+          submitFormData.append(key, JSON.stringify(value))
+        } else if (Array.isArray(value)) {
+          // Handle file arrays
+          value.forEach((file, index) => {
+            if (file instanceof File) {
+              submitFormData.append(`${key}_${index}`, file)
+            }
           })
-
-          // Show clean success message
-          setShowSuccessModal(true)
-          
-          // Reset form after successful submission
-          setTimeout(() => {
-            setCurrentStep(0)
-            setFormData({
-              registrationType: "",
-              organizationName: "",
-              email: "",
-              phone: "",
-              businessAddress: "",
-              organizationEmail: "",
-              organizationPhone: "",
-              officeAddress: "",
-              totalShares: 0,
-              keyObjectives: "",
-              trusteeTenure: "",
-              sealCustodian: "",
-              fundingSources: "",
-              proposedName1: "",
-              proposedName2: "",
-              natureOfBusiness: "",
-              directorName: "",
-              directorNIN: "",
-              directorPhone: "",
-              directors: [],
-              shareholders: [],
-              trustees: [],
-              passportPhoto: [],
-              sampleSignature: [],
-            })
-          }, 3000)
-          console.log("[v0] Form submitted successfully:", result.data)
-        } else {
-          console.error("[v0] API returned error:", result.message, result.error)
-          throw new Error(result.message || "Failed to submit form")
+        } else if (value !== null && value !== undefined) {
+          submitFormData.append(key, value.toString())
         }
-      } catch (error) {
-        console.error("[v0] === FORM SUBMISSION ERROR ===")
-        console.error("[v0] Error type:", typeof error)
-        console.error("[v0] Error:", error)
+      })
 
-        if (error instanceof Error) {
-          console.error("[v0] Error name:", error.name)
-          console.error("[v0] Error message:", error.message)
-          console.error("[v0] Error stack:", error.stack)
-        }
-
-        let errorMessage = "An unexpected error occurred. Please try again."
-
-        if (error instanceof TypeError && error.message.includes("fetch")) {
-          errorMessage = "Network error. Please check your internet connection and try again."
-        } else if (error instanceof Error) {
-          errorMessage = error.message
-        }
-
-        toast.error("Failed to submit form", {
-          description: errorMessage,
-          duration: 5000,
+      // Add files from directors, shareholders, and trustees
+      formData.directors.forEach((person, index) => {
+        Object.entries(person).forEach(([field, value]) => {
+          if (value instanceof File) {
+            submitFormData.append(`director_${index}_${field}`, value)
+          }
         })
-      } finally {
-        setIsSubmitting(false)
-        console.log("[v0] === FORM SUBMISSION DEBUG END ===")
+      })
+
+      formData.shareholders.forEach((person, index) => {
+        Object.entries(person).forEach(([field, value]) => {
+          if (value instanceof File) {
+            submitFormData.append(`shareholder_${index}_${field}`, value)
+          }
+        })
+      })
+
+      formData.trustees.forEach((person, index) => {
+        Object.entries(person).forEach(([field, value]) => {
+          if (value instanceof File) {
+            submitFormData.append(`trustee_${index}_${field}`, value)
+          }
+        })
+      })
+
+      console.log("[v0] Submitting to API...")
+
+      const response = await fetch("/api/submit-form", {
+        method: "POST",
+        body: submitFormData,
+      })
+
+      console.log("[v0] API Response status:", response.status)
+
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error("[v0] API Error response:", errorText)
+        throw new Error(`Server error: ${response.status} - ${errorText}`)
       }
+
+      const result = await response.json()
+      console.log("[v0] API Success response:", result)
+
+      toast.success("Form submitted successfully!")
+
+      // Show success message with links
+      if (result.folderUrl || result.documentUrl) {
+        const message = `Your registration has been submitted successfully! ${
+          result.folderUrl ? `View your files: ${result.folderUrl}` : ""
+        } ${result.documentUrl ? `View your document: ${result.documentUrl}` : ""}`
+        toast.success(message, { duration: 10000 })
+      }
+
+      // Reset form
+      setCurrentStep(0)
+      setFormData({
+        registrationType: "",
+        proposedName1: "",
+        proposedName2: "",
+        proposedName3: "",
+        businessAddress: "",
+        email: "",
+        phone: "",
+        natureOfBusiness: "",
+        directorName: "",
+        directorNIN: "",
+        directorPhone: "",
+        passportPhoto: [],
+        sampleSignature: [],
+        directors: [],
+        shareholders: [],
+        totalShares: 0,
+        allotmentDetails: "",
+        organizationName: "",
+        organizationEmail: "",
+        organizationPhone: "",
+        officeAddress: "",
+        keyObjectives: "",
+        trusteeTenure: "",
+        sealCustodian: "",
+        fundingSources: "",
+        trustees: [],
+      })
+    } catch (error) {
+      console.error("[v0] Form submission error:", error)
+      toast.error(error instanceof Error ? error.message : "Failed to submit form. Please try again.")
+    } finally {
+      setIsSubmitting(false)
     }
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -760,25 +646,38 @@ export default function BusinessRegistrationForm() {
                       <CardHeader>
                         <CardTitle className="section-title">Proposed Business Names</CardTitle>
                       </CardHeader>
-                      <CardContent className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+                      <CardContent className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
                         <div>
-                          <label className="form-label">Proposed Name 1</label>
+                          <label className="form-label">Proposed Name 1 *</label>
                           <input
                             type="text"
                             className="form-input"
                             value={formData.proposedName1}
                             onChange={(e) => updateFormData("proposedName1", e.target.value)}
                             placeholder="Enter first choice name"
+                            required
                           />
                         </div>
                         <div>
-                          <label className="form-label">Proposed Name 2</label>
+                          <label className="form-label">Proposed Name 2 *</label>
                           <input
                             type="text"
                             className="form-input"
                             value={formData.proposedName2}
                             onChange={(e) => updateFormData("proposedName2", e.target.value)}
-                            placeholder="Enter alternative name"
+                            placeholder="Enter second choice name"
+                            required
+                          />
+                        </div>
+                        <div>
+                          <label className="form-label">Proposed Name 3 *</label>
+                          <input
+                            type="text"
+                            className="form-input"
+                            value={formData.proposedName3}
+                            onChange={(e) => updateFormData("proposedName3", e.target.value)}
+                            placeholder="Enter third choice name"
+                            required
                           />
                         </div>
                       </CardContent>
@@ -1106,6 +1005,10 @@ export default function BusinessRegistrationForm() {
                             <p className="text-muted-foreground mt-1">{formData.proposedName2 || "Not provided"}</p>
                           </div>
                           <div>
+                            <span className="font-medium text-foreground">Proposed Name 3:</span>
+                            <p className="text-muted-foreground mt-1">{formData.proposedName3 || "Not provided"}</p>
+                          </div>
+                          <div>
                             <span className="font-medium text-foreground">Business Address:</span>
                             <p className="text-muted-foreground mt-1">{formData.businessAddress || "Not provided"}</p>
                           </div>
@@ -1190,16 +1093,16 @@ export default function BusinessRegistrationForm() {
                           <div>
                             <span className="font-medium text-foreground">Passport Photograph:</span>
                             <p className="text-muted-foreground mt-1">
-                              {formData.passportPhoto && formData.passportPhoto.length > 0 
-                                ? `${formData.passportPhoto.length} file(s) uploaded - ${formData.passportPhoto.map(f => f.name).join(', ')}` 
+                              {formData.passportPhoto && formData.passportPhoto.length > 0
+                                ? `${formData.passportPhoto.length} file(s) uploaded - ${formData.passportPhoto.map((f) => f.name).join(", ")}`
                                 : "Not uploaded"}
                             </p>
                           </div>
                           <div>
                             <span className="font-medium text-foreground">Sample Signature:</span>
                             <p className="text-muted-foreground mt-1">
-                              {formData.sampleSignature && formData.sampleSignature.length > 0 
-                                ? `${formData.sampleSignature.length} file(s) uploaded - ${formData.sampleSignature.map(f => f.name).join(', ')}` 
+                              {formData.sampleSignature && formData.sampleSignature.length > 0
+                                ? `${formData.sampleSignature.length} file(s) uploaded - ${formData.sampleSignature.map((f) => f.name).join(", ")}`
                                 : "Not uploaded"}
                             </p>
                           </div>
@@ -1238,7 +1141,9 @@ export default function BusinessRegistrationForm() {
                                   </div>
                                   <div className="lg:col-span-2">
                                     <span className="font-medium">Residential Address:</span>
-                                    <p className="text-muted-foreground">{director.residentialAddress || "Not provided"}</p>
+                                    <p className="text-muted-foreground">
+                                      {director.residentialAddress || "Not provided"}
+                                    </p>
                                   </div>
                                 </div>
                               </div>
@@ -1261,7 +1166,9 @@ export default function BusinessRegistrationForm() {
                               </div>
                               <div>
                                 <span className="font-medium text-foreground">Allotment Details:</span>
-                                <p className="text-muted-foreground mt-1">{formData.allotmentDetails || "Not provided"}</p>
+                                <p className="text-muted-foreground mt-1">
+                                  {formData.allotmentDetails || "Not provided"}
+                                </p>
                               </div>
                             </div>
                             {formData.shareholders.map((shareholder: any, index: number) => (
@@ -1290,7 +1197,9 @@ export default function BusinessRegistrationForm() {
                                   </div>
                                   <div className="lg:col-span-2">
                                     <span className="font-medium">Residential Address:</span>
-                                    <p className="text-muted-foreground">{shareholder.residentialAddress || "Not provided"}</p>
+                                    <p className="text-muted-foreground">
+                                      {shareholder.residentialAddress || "Not provided"}
+                                    </p>
                                   </div>
                                 </div>
                               </div>
@@ -1323,7 +1232,9 @@ export default function BusinessRegistrationForm() {
                                 </div>
                                 <div>
                                   <span className="font-medium">Phone Number:</span>
-                                  <p className="text-muted-foreground">{trustee.phoneNumber || trustee.phone || "Not provided"}</p>
+                                  <p className="text-muted-foreground">
+                                    {trustee.phoneNumber || trustee.phone || "Not provided"}
+                                  </p>
                                 </div>
                                 <div>
                                   <span className="font-medium">Date of Birth:</span>
@@ -1339,10 +1250,12 @@ export default function BusinessRegistrationForm() {
                                 </div>
                                 <div className="lg:col-span-2">
                                   <span className="font-medium">Residential Address:</span>
-                                  <p className="text-muted-foreground">{trustee.residentialAddress || "Not provided"}</p>
+                                  <p className="text-muted-foreground">
+                                    {trustee.residentialAddress || "Not provided"}
+                                  </p>
                                 </div>
                               </div>
-                              
+
                               {/* File Upload Information for Trustees */}
                               <div className="mt-4 pt-3 border-t border-muted">
                                 <h5 className="font-medium text-foreground mb-2">Uploaded Documents</h5>
@@ -1350,24 +1263,24 @@ export default function BusinessRegistrationForm() {
                                   <div>
                                     <span className="font-medium">ID Card:</span>
                                     <p className="text-muted-foreground">
-                                      {trustee.files?.idCard && trustee.files.idCard.length > 0 
-                                        ? `${trustee.files.idCard.length} file(s) uploaded - ${trustee.files.idCard.map((f: File) => f.name).join(', ')}` 
+                                      {trustee.files?.idCard && trustee.files.idCard.length > 0
+                                        ? `${trustee.files.idCard.length} file(s) uploaded - ${trustee.files.idCard.map((f: File) => f.name).join(", ")}`
                                         : "Not uploaded"}
                                     </p>
                                   </div>
                                   <div>
                                     <span className="font-medium">Passport Photograph:</span>
                                     <p className="text-muted-foreground">
-                                      {trustee.files?.passport && trustee.files.passport.length > 0 
-                                        ? `${trustee.files.passport.length} file(s) uploaded - ${trustee.files.passport.map((f: File) => f.name).join(', ')}` 
+                                      {trustee.files?.passport && trustee.files.passport.length > 0
+                                        ? `${trustee.files.passport.length} file(s) uploaded - ${trustee.files.passport.map((f: File) => f.name).join(", ")}`
                                         : "Not uploaded"}
                                     </p>
                                   </div>
                                   <div>
                                     <span className="font-medium">Sample Signature:</span>
                                     <p className="text-muted-foreground">
-                                      {trustee.files?.signature && trustee.files.signature.length > 0 
-                                        ? `${trustee.files.signature.length} file(s) uploaded - ${trustee.files.signature.map((f: File) => f.name).join(', ')}` 
+                                      {trustee.files?.signature && trustee.files.signature.length > 0
+                                        ? `${trustee.files.signature.length} file(s) uploaded - ${trustee.files.signature.map((f: File) => f.name).join(", ")}`
                                         : "Not uploaded"}
                                     </p>
                                   </div>
@@ -1443,23 +1356,30 @@ export default function BusinessRegistrationForm() {
               <div className="space-y-4">
                 <div className="bg-green-50 border border-green-200 rounded-lg p-4">
                   <p className="text-green-800 font-medium mb-2">✅ Application Received</p>
-                  <p className="text-green-700 text-sm">We have successfully received your business registration application and all required documents.</p>
+                  <p className="text-green-700 text-sm">
+                    We have successfully received your business registration application and all required documents.
+                  </p>
                 </div>
 
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                   <p className="text-blue-800 font-medium mb-2">⏰ What's Next?</p>
-                  <p className="text-blue-700 text-sm">Our team will review your submission and contact you within 2-3 business days to proceed with your registration.</p>
+                  <p className="text-blue-700 text-sm">
+                    Our team will review your submission and contact you within 2-3 business days to proceed with your
+                    registration.
+                  </p>
                 </div>
 
                 <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
                   <p className="text-amber-800 font-medium mb-2">📞 Need Help?</p>
-                  <p className="text-amber-700 text-sm">If you have any questions, feel free to contact our support team.</p>
+                  <p className="text-amber-700 text-sm">
+                    If you have any questions, feel free to contact our support team.
+                  </p>
                 </div>
               </div>
 
               {/* Close button */}
               <div className="mt-6">
-                <Button 
+                <Button
                   onClick={() => setShowSuccessModal(false)}
                   className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-medium py-3 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl"
                 >
