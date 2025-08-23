@@ -52,41 +52,76 @@
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    border-color: hsl(var(--border));
+    outline-color: hsl(var(--ring));
   }
   body {
-    @apply bg-background text-foreground font-sans;
-    /* Simple white background for clean professional look */
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+    font-family: system-ui, sans-serif;
   }
 }
 
 /* Enhanced component styles for modern professional appearance */
 @layer components {
   .form-section {
-    @apply bg-card border border-border rounded-lg p-6 shadow-sm;
+    background-color: hsl(var(--card));
+    border: 1px solid hsl(var(--border));
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
   }
 
   .section-title {
-    @apply text-xl font-bold text-primary mb-4;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: hsl(var(--primary));
+    margin-bottom: 1rem;
   }
 
   .form-input {
-    @apply w-full px-4 py-3 border border-border rounded-lg bg-input text-foreground placeholder:text-muted-foreground transition-all duration-200;
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 1px solid hsl(var(--border));
+    border-radius: 0.5rem;
+    background-color: hsl(var(--input));
+    color: hsl(var(--foreground));
+    transition: all 0.2s;
   }
 
   .form-input:focus {
-    @apply outline-none ring-2 ring-primary/50 border-primary;
+    outline: none;
+    box-shadow: 0 0 0 2px hsl(var(--ring) / 0.5);
+    border-color: hsl(var(--primary));
   }
 
   .form-label {
-    @apply block text-sm font-medium text-muted-foreground mb-2;
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: hsl(var(--muted-foreground));
+    margin-bottom: 0.5rem;
   }
 
   .submit-button {
-    @apply bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-3 px-8 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg;
+    background-color: hsl(var(--primary));
+    color: hsl(var(--primary-foreground));
+    font-weight: 700;
+    padding: 0.75rem 2rem;
+    border-radius: 0.5rem;
+    transition: all 0.2s;
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+  }
+
+  .submit-button:hover {
+    background-color: hsl(var(--primary) / 0.9);
+    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
   }
 
   .card-enhanced {
-    @apply bg-card border border-border rounded-lg shadow-sm;
+    background-color: hsl(var(--card));
+    border: 1px solid hsl(var(--border));
+    border-radius: 0.5rem;
+    box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
   }
 }
