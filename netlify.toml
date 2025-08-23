@@ -5,6 +5,8 @@
 [build.environment]
   NODE_VERSION = "18"
   NPM_FLAGS = "--legacy-peer-deps"
+  # Force npm usage instead of pnpm
+  PACKAGE_MANAGER = "npm"
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
