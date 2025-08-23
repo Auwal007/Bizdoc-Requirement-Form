@@ -95,6 +95,28 @@ export default function BusinessRegistrationForm() {
     }
   }
 
+  const testDropboxConnection = async () => {
+    try {
+      setIsSubmitting(true)
+      console.log("[v0] Testing Dropbox connection...")
+
+      const response = await fetch("/api/test-dropbox")
+      const result = await response.json()
+
+      if (result.success) {
+        toast.success(`Dropbox connection successful! Account: ${result.accountInfo?.name || "Connected"}`)
+      } else {
+        toast.error(`Dropbox connection failed: ${result.message}`)
+        console.error("[v0] Dropbox test failed:", result)
+      }
+    } catch (error) {
+      console.error("[v0] Dropbox test error:", error)
+      toast.error("Failed to test Dropbox connection. Please check your network.")
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
   const handleSubmit = async () => {
     if (!formData.registrationType) {
       toast.error("Please select a registration type")

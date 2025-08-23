@@ -84,10 +84,51 @@ if (!process.env.DROPBOX_ACCESS_TOKEN) {
   throw new Error("DROPBOX_ACCESS_TOKEN environment variable is required")
 }
 
+const accessToken = process.env.DROPBOX_ACCESS_TOKEN.trim()
+
+// Validate token format
+if (!accessToken.startsWith("sl.") && !accessToken.startsWith("aal_") && !accessToken.startsWith("aap_")) {
+  console.error("[DROPBOX] Warning: Token format may be invalid. Expected format: sl.*, aal_*, or aap_*")
+}
+
 const dbx = new Dropbox({
-  accessToken: process.env.DROPBOX_ACCESS_TOKEN,
+  accessToken: accessToken,
   fetch: fetch,
 })
+
+export async function validateDropboxToken(): Promise<{ isValid: boolean; error?: string; accountInfo?: any }> {
+  try {
+    console.log("[DROPBOX] Validating access token...")
+    const response = await dbx.usersGetCurrentAccount()
+    console.log("[DROPBOX] Token validation successful. Account:", response.result.name.display_name)
+    return {
+      isValid: true,
+      accountInfo: {
+        name: response.result.name.display_name,
+        email: response.result.email,
+        accountId: response.result.account_id,
+      },
+    }
+  } catch (error: any) {
+    console.error("[DROPBOX] Token validation failed:", error.message)
+    let errorMessage = "Token validation failed"
+
+    if (error.status === 401) {
+      errorMessage = "Token is invalid, expired, or lacks permissions"
+      console.error("[DROPBOX] 401 Error - Token is invalid, expired, or lacks permissions")
+      console.error("[DROPBOX] Please check:")
+      console.error("  1. Token is not expired")
+      console.error("  2. App has 'Full Dropbox' access (not 'App folder')")
+      console.error("  3. User hasn't revoked app permissions")
+      console.error("  4. Token format is correct (should start with sl., aal_, or aap_)")
+    }
+
+    return {
+      isValid: false,
+      error: errorMessage,
+    }
+  }
+}
 
 function sanitizeFileName(name: string): string {
   return name
@@ -103,17 +144,36 @@ function safeParseInt(value: string, fallback = 0): number {
 
 export async function createDropboxFolder(name: string, parentPath = ""): Promise<string> {
   try {
+    const tokenValidation = await validateDropboxToken()
+    if (!tokenValidation.isValid) {
+      throw new Error(`Dropbox authentication failed: ${tokenValidation.error}`)
+    }
+
     const sanitizedName = sanitizeFileName(name)
     const folderPath = parentPath ? `${parentPath}/${sanitizedName}` : `/${sanitizedName}`
+
+    console.log("[DROPBOX] Creating folder:", folderPath)
 
     await dbx.filesCreateFolderV2({
       path: folderPath,
       autorename: true,
     })
 
+    console.log("[DROPBOX] Folder created successfully:", folderPath)
     return folderPath
-  } catch (error) {
-    console.error("[DROPBOX] Error creating folder:", error)
+  } catch (error: any) {
+    console.error("[DROPBOX] Error creating folder:", error.message)
+
+    if (error.status === 401) {
+      throw new Error(
+        "Dropbox authentication failed. The access token is invalid, expired, or lacks sufficient permissions. Please regenerate your Dropbox access token with 'Full Dropbox' access.",
+      )
+    } else if (error.status === 403) {
+      throw new Error("Dropbox access forbidden. Your app may not have permission to create folders in this location.")
+    } else if (error.error && error.error[".tag"] === "path") {
+      throw new Error(`Dropbox path error: ${error.error.path[".tag"]}. The folder path may be invalid.`)
+    }
+
     throw error
   }
 }

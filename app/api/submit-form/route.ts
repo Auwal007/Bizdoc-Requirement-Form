@@ -26,9 +26,16 @@ export async function POST(request: NextRequest) {
   try {
     console.log("[API] Processing comprehensive form submission with Dropbox storage")
 
-    // Validate environment variables
     if (!process.env.DROPBOX_ACCESS_TOKEN) {
-      throw new Error("DROPBOX_ACCESS_TOKEN environment variable is required")
+      console.error("[API] DROPBOX_ACCESS_TOKEN environment variable is missing")
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Server configuration error: Dropbox access token not configured",
+          error: "DROPBOX_ACCESS_TOKEN environment variable is required",
+        },
+        { status: 500 },
+      )
     }
 
     // Import Dropbox services
@@ -211,63 +218,111 @@ export async function POST(request: NextRequest) {
 
     console.log(`[API] Creating Dropbox folder: ${folderName}`)
 
-    // Create Dropbox folder
-    const folderPath = await createDropboxFolder(folderName, "/BIZDOC Applications")
-    console.log(`[API] Dropbox folder created: ${folderPath}`)
+    try {
+      // Create Dropbox folder
+      const folderPath = await createDropboxFolder(folderName, "/BIZDOC Applications")
+      console.log(`[API] Dropbox folder created: ${folderPath}`)
 
-    // Upload files to Dropbox with enhanced organization
-    let uploadedFiles: Array<{ fileName: string; filePath: string; shareUrl?: string }> = []
-    if (files.length > 0) {
-      console.log(`[API] Uploading ${files.length} files to Dropbox...`)
-      uploadedFiles = await uploadFilesToDropbox(files, folderPath, registrationData)
-      console.log(`[API] Successfully uploaded ${uploadedFiles.length} files`)
-    }
+      // Upload files to Dropbox with enhanced organization
+      let uploadedFiles: Array<{ fileName: string; filePath: string; shareUrl?: string }> = []
+      if (files.length > 0) {
+        console.log(`[API] Uploading ${files.length} files to Dropbox...`)
+        uploadedFiles = await uploadFilesToDropbox(files, folderPath, registrationData)
+        console.log(`[API] Successfully uploaded ${uploadedFiles.length} files`)
+      }
 
-    // Create comprehensive document with form data
-    console.log("[API] Creating comprehensive registration document...")
-    const { filePath: docPath, shareUrl: docLink } = await createDropboxDocument(registrationData, folderPath)
-    console.log(`[API] Document created: ${docPath}`)
+      // Create comprehensive document with form data
+      console.log("[API] Creating comprehensive registration document...")
+      const { filePath: docPath, shareUrl: docLink } = await createDropboxDocument(registrationData, folderPath)
+      console.log(`[API] Document created: ${docPath}`)
 
-    // Get folder link for easy access
-    const folderLink = await getDropboxFolderLink(folderPath)
-    console.log(`[API] Folder link generated: ${folderLink}`)
+      // Get folder link for easy access
+      const folderLink = await getDropboxFolderLink(folderPath)
+      console.log(`[API] Folder link generated: ${folderLink}`)
 
-    const response = {
-      success: true,
-      message: `${registrationType} registration submitted successfully to Dropbox!`,
-      data: {
-        registrationType: registrationData.registrationType,
-        businessName: businessName,
-        folderPath,
-        folderUrl: folderLink,
-        documentPath: docPath,
-        documentUrl: docLink,
-        uploadedFiles: uploadedFiles.map((file) => ({
-          fileName: file.fileName,
-          filePath: file.filePath,
-          shareUrl: file.shareUrl,
-        })),
-        summary: {
-          totalFiles: uploadedFiles.length,
-          directorsCount: registrationData.directors?.length || 0,
-          shareholdersCount: registrationData.shareholders?.length || 0,
-          trusteesCount: registrationData.trustees?.length || 0,
-          submissionDate: new Date().toISOString(),
+      const response = {
+        success: true,
+        message: `${registrationType} registration submitted successfully to Dropbox!`,
+        data: {
+          registrationType: registrationData.registrationType,
+          businessName: businessName,
+          folderPath,
+          folderUrl: folderLink,
+          documentPath: docPath,
+          documentUrl: docLink,
+          uploadedFiles: uploadedFiles.map((file) => ({
+            fileName: file.fileName,
+            filePath: file.filePath,
+            shareUrl: file.shareUrl,
+          })),
+          summary: {
+            totalFiles: uploadedFiles.length,
+            directorsCount: registrationData.directors?.length || 0,
+            shareholdersCount: registrationData.shareholders?.length || 0,
+            trusteesCount: registrationData.trustees?.length || 0,
+            submissionDate: new Date().toISOString(),
+          },
         },
-      },
+      }
+
+      console.log("[API] Form submission completed successfully")
+      return NextResponse.json(response)
+    } catch (dropboxError: any) {
+      console.error("[API] Dropbox operation failed:", dropboxError.message)
+
+      if (dropboxError.message.includes("authentication failed") || dropboxError.message.includes("access token")) {
+        return NextResponse.json(
+          {
+            success: false,
+            message: "Dropbox authentication error. Please contact support.",
+            error:
+              "The Dropbox access token is invalid, expired, or lacks sufficient permissions. Please regenerate your Dropbox access token with 'Full Dropbox' access.",
+            details: {
+              issue: "Authentication",
+              solution: "Contact administrator to update Dropbox credentials",
+            },
+          },
+          { status: 401 },
+        )
+      }
+
+      if (dropboxError.message.includes("access forbidden")) {
+        return NextResponse.json(
+          {
+            success: false,
+            message: "Dropbox access denied. Please contact support.",
+            error: "The application does not have permission to access the required Dropbox folders.",
+            details: {
+              issue: "Permissions",
+              solution: "Contact administrator to update Dropbox app permissions",
+            },
+          },
+          { status: 403 },
+        )
+      }
+
+      // Re-throw for general error handling
+      throw dropboxError
+    }
+  } catch (error: any) {
+    console.error("[API] Form submission error:", error.message)
+
+    const errorResponse = {
+      success: false,
+      message: "Failed to submit form. Please try again.",
+      error: error.message || "Unknown error occurred",
+      timestamp: new Date().toISOString(),
     }
 
-    console.log("[API] Form submission completed successfully")
-    return NextResponse.json(response)
-  } catch (error) {
-    console.error("[API] Form submission error:", error)
-    return NextResponse.json(
-      {
-        success: false,
-        message: "Failed to submit form. Please try again.",
-        error: error instanceof Error ? error.message : "Unknown error occurred",
-      },
-      { status: 500 },
-    )
+    // Add specific guidance based on error type
+    if (error.message.includes("DROPBOX_ACCESS_TOKEN")) {
+      errorResponse.message = "Server configuration error. Please contact support."
+    } else if (error.message.includes("authentication") || error.message.includes("401")) {
+      errorResponse.message = "Authentication error. Please contact support to resolve Dropbox access issues."
+    } else if (error.message.includes("network") || error.message.includes("fetch")) {
+      errorResponse.message = "Network error. Please check your connection and try again."
+    }
+
+    return NextResponse.json(errorResponse, { status: 500 })
   }
 }
