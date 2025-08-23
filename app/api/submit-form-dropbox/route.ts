@@ -1,18 +1,15 @@
 import { type NextRequest, NextResponse } from "next/server"
-import type { FormData, UploadedFile } from "@/lib/dropbox-services"
+import {
+  createDropboxFolder,
+  uploadFilesToDropbox,
+  createDropboxDocument,
+  getDropboxFolderLink,
+  type FormData,
+  type UploadedFile,
+} from "@/lib/dropbox-services"
 
 export async function POST(request: NextRequest) {
   try {
-    console.log("[v0] Processing form submission with Dropbox storage")
-
-    // Import Dropbox services
-    const {
-      createDropboxFolder,
-      uploadFilesToDropbox,
-      createDropboxDocument,
-      getDropboxFolderLink,
-    } = await import("@/lib/dropbox-services")
-
     const formData = await request.formData()
 
     // Extract form data
@@ -34,24 +31,19 @@ export async function POST(request: NextRequest) {
     const directorsData = formData.get("directors")
     if (directorsData) {
       registrationData.directors = JSON.parse(directorsData as string)
-      console.log("[v0] Directors data:", registrationData.directors)
     }
 
     const shareholdersData = formData.get("shareholders")
     if (shareholdersData) {
       registrationData.shareholders = JSON.parse(shareholdersData as string)
-      console.log("[v0] Shareholders data:", registrationData.shareholders)
     }
 
     const trusteesData = formData.get("trustees")
     if (trusteesData) {
       registrationData.trustees = JSON.parse(trusteesData as string)
-      console.log("[v0] Trustees data:", registrationData.trustees)
     }
 
-    console.log("[v0] Complete registration data:", registrationData)
-
-    // Extract files with better organization
+    // Extract files
     const files: UploadedFile[] = []
     const fileFields = [
       "cac2",
@@ -62,10 +54,12 @@ export async function POST(request: NextRequest) {
       "sampleSignature",
       "memart",
       "boardResolution",
+      "trusteeIdCards",
+      "trusteePassportPhotographs",
+      "trusteeSampleSignatures",
       "constitutionDocument",
     ]
 
-    // Handle regular files
     for (const fieldName of fileFields) {
       const fileEntries = formData.getAll(fieldName)
       for (const fileEntry of fileEntries) {
@@ -81,22 +75,6 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Handle director files with specific naming
-    for (const [key, value] of formData.entries()) {
-      if (key.startsWith('director_') || key.startsWith('shareholder_') || key.startsWith('trustee_')) {
-        if (value instanceof File && value.size > 0) {
-          const buffer = Buffer.from(await value.arrayBuffer())
-          files.push({
-            fieldName: key,
-            fileName: value.name,
-            buffer,
-            mimeType: value.type,
-          })
-          console.log(`[v0] Added file: ${key} -> ${value.name}`)
-        }
-      }
-    }
-
     // Create folder name
     const businessName = registrationData.businessName || registrationData.organizationName || "Unknown Business"
     const timestamp = new Date().toISOString().split("T")[0]
@@ -108,7 +86,7 @@ export async function POST(request: NextRequest) {
     // Upload files to Dropbox
     let uploadedFiles: Array<{ fileName: string; filePath: string; shareUrl?: string }> = []
     if (files.length > 0) {
-      uploadedFiles = await uploadFilesToDropbox(files, folderPath, registrationData)
+      uploadedFiles = await uploadFilesToDropbox(files, folderPath)
     }
 
     // Create document with form data
@@ -129,11 +107,11 @@ export async function POST(request: NextRequest) {
       },
     })
   } catch (error) {
-    console.error("Form submission error:", error)
+    console.error("Dropbox form submission error:", error)
     return NextResponse.json(
       {
         success: false,
-        message: "Failed to submit form. Please try again.",
+        message: "Failed to submit form to Dropbox. Please try again.",
         error: error instanceof Error ? error.message : "Unknown error",
       },
       { status: 500 },

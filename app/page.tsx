@@ -182,29 +182,81 @@ export default function BusinessRegistrationForm() {
       })
 
       // Add files from directors/shareholders/trustees
-      const persons = [...formData.directors, ...formData.shareholders, ...formData.trustees]
-      persons.forEach((person, index) => {
-        console.log(`[v0] Processing person ${index + 1}:`, person.fullName || person.name)
+      // Handle files for directors, shareholders, and trustees with proper naming
+      formData.directors.forEach((director, directorIndex) => {
+        console.log(`[v0] Processing director ${directorIndex + 1}:`, director.fullName)
 
-        if (person.idCard && person.idCard.length > 0) {
-          person.idCard.forEach((file: File) => {
-            submitFormData.append("idCard", file)
+        if (director.idCard && director.idCard.length > 0) {
+          director.idCard.forEach((file: File) => {
+            submitFormData.append(`director_${directorIndex}_idCard`, file)
             totalFiles++
-            console.log("[v0] Added ID card:", file.name, file.size, "bytes")
+            console.log(`[v0] Added director ${directorIndex + 1} ID card:`, file.name, file.size, "bytes")
           })
         }
-        if (person.passportPhotograph && person.passportPhotograph.length > 0) {
-          person.passportPhotograph.forEach((file: File) => {
-            submitFormData.append("passportPhotograph", file)
+        if (director.passportPhotograph && director.passportPhotograph.length > 0) {
+          director.passportPhotograph.forEach((file: File) => {
+            submitFormData.append(`director_${directorIndex}_passportPhotograph`, file)
             totalFiles++
-            console.log("[v0] Added passport photo:", file.name, file.size, "bytes")
+            console.log(`[v0] Added director ${directorIndex + 1} passport photo:`, file.name, file.size, "bytes")
           })
         }
-        if (person.sampleSignature && person.sampleSignature.length > 0) {
-          person.sampleSignature.forEach((file: File) => {
-            submitFormData.append("sampleSignature", file)
+        if (director.sampleSignature && director.sampleSignature.length > 0) {
+          director.sampleSignature.forEach((file: File) => {
+            submitFormData.append(`director_${directorIndex}_sampleSignature`, file)
             totalFiles++
-            console.log("[v0] Added sample signature:", file.name, file.size, "bytes")
+            console.log(`[v0] Added director ${directorIndex + 1} sample signature:`, file.name, file.size, "bytes")
+          })
+        }
+      })
+
+      formData.shareholders.forEach((shareholder, shareholderIndex) => {
+        console.log(`[v0] Processing shareholder ${shareholderIndex + 1}:`, shareholder.fullName)
+
+        if (shareholder.idCard && shareholder.idCard.length > 0) {
+          shareholder.idCard.forEach((file: File) => {
+            submitFormData.append(`shareholder_${shareholderIndex}_idCard`, file)
+            totalFiles++
+            console.log(`[v0] Added shareholder ${shareholderIndex + 1} ID card:`, file.name, file.size, "bytes")
+          })
+        }
+        if (shareholder.passportPhotograph && shareholder.passportPhotograph.length > 0) {
+          shareholder.passportPhotograph.forEach((file: File) => {
+            submitFormData.append(`shareholder_${shareholderIndex}_passportPhotograph`, file)
+            totalFiles++
+            console.log(`[v0] Added shareholder ${shareholderIndex + 1} passport photo:`, file.name, file.size, "bytes")
+          })
+        }
+        if (shareholder.sampleSignature && shareholder.sampleSignature.length > 0) {
+          shareholder.sampleSignature.forEach((file: File) => {
+            submitFormData.append(`shareholder_${shareholderIndex}_sampleSignature`, file)
+            totalFiles++
+            console.log(`[v0] Added shareholder ${shareholderIndex + 1} sample signature:`, file.name, file.size, "bytes")
+          })
+        }
+      })
+
+      formData.trustees.forEach((trustee, trusteeIndex) => {
+        console.log(`[v0] Processing trustee ${trusteeIndex + 1}:`, trustee.fullName)
+
+        if (trustee.idCard && trustee.idCard.length > 0) {
+          trustee.idCard.forEach((file: File) => {
+            submitFormData.append(`trustee_${trusteeIndex}_idCard`, file)
+            totalFiles++
+            console.log(`[v0] Added trustee ${trusteeIndex + 1} ID card:`, file.name, file.size, "bytes")
+          })
+        }
+        if (trustee.passportPhotograph && trustee.passportPhotograph.length > 0) {
+          trustee.passportPhotograph.forEach((file: File) => {
+            submitFormData.append(`trustee_${trusteeIndex}_passportPhotograph`, file)
+            totalFiles++
+            console.log(`[v0] Added trustee ${trusteeIndex + 1} passport photo:`, file.name, file.size, "bytes")
+          })
+        }
+        if (trustee.sampleSignature && trustee.sampleSignature.length > 0) {
+          trustee.sampleSignature.forEach((file: File) => {
+            submitFormData.append(`trustee_${trusteeIndex}_sampleSignature`, file)
+            totalFiles++
+            console.log(`[v0] Added trustee ${trusteeIndex + 1} sample signature:`, file.name, file.size, "bytes")
           })
         }
       })
@@ -247,8 +299,9 @@ export default function BusinessRegistrationForm() {
 
       if (result.success) {
         console.log("[v0] SUCCESS: Form submitted successfully")
+        
         toast.success("Form submitted successfully!", {
-          description: "Your documents have been uploaded to Google Drive and a summary document has been created.",
+          description: "Your documents have been uploaded to Dropbox and organized in folders.",
           duration: 5000,
         })
 
@@ -257,8 +310,9 @@ export default function BusinessRegistrationForm() {
           Your application has been submitted successfully!
           
           📁 Documents Folder: ${result.data.folderLink}
-          📄 Summary Document: ${result.data.docLink}
+          📄 Summary Document: ${result.data.docLink || 'Created in folder'}
           
+          All files have been uploaded to Dropbox and organized for easy access.
           We will contact you shortly to proceed with your registration.
         `
 
@@ -978,35 +1032,239 @@ export default function BusinessRegistrationForm() {
                         <>
                           <div>
                             <span className="font-medium text-foreground">Organization Name:</span>
-                            <p className="text-muted-foreground mt-1">{formData.organizationName}</p>
+                            <p className="text-muted-foreground mt-1">{formData.organizationName || "Not provided"}</p>
                           </div>
                           <div>
                             <span className="font-medium text-foreground">Office Address:</span>
-                            <p className="text-muted-foreground mt-1">{formData.officeAddress}</p>
+                            <p className="text-muted-foreground mt-1">{formData.officeAddress || "Not provided"}</p>
                           </div>
                           <div>
                             <span className="font-medium text-foreground">Contact Email:</span>
-                            <p className="text-muted-foreground mt-1">{formData.organizationEmail}</p>
+                            <p className="text-muted-foreground mt-1">{formData.organizationEmail || "Not provided"}</p>
+                          </div>
+                          <div>
+                            <span className="font-medium text-foreground">Contact Phone:</span>
+                            <p className="text-muted-foreground mt-1">{formData.organizationPhone || "Not provided"}</p>
+                          </div>
+                          <div>
+                            <span className="font-medium text-foreground">Key Objectives:</span>
+                            <p className="text-muted-foreground mt-1">{formData.keyObjectives || "Not provided"}</p>
+                          </div>
+                          <div>
+                            <span className="font-medium text-foreground">Trustee Tenure:</span>
+                            <p className="text-muted-foreground mt-1">{formData.trusteeTenure || "Not provided"}</p>
+                          </div>
+                          <div>
+                            <span className="font-medium text-foreground">Seal Custodian:</span>
+                            <p className="text-muted-foreground mt-1">{formData.sealCustodian || "Not provided"}</p>
+                          </div>
+                          <div>
+                            <span className="font-medium text-foreground">Funding Sources:</span>
+                            <p className="text-muted-foreground mt-1">{formData.fundingSources || "Not provided"}</p>
                           </div>
                         </>
                       ) : (
                         <>
                           <div>
                             <span className="font-medium text-foreground">Proposed Name 1:</span>
-                            <p className="text-muted-foreground mt-1">{formData.proposedName1}</p>
+                            <p className="text-muted-foreground mt-1">{formData.proposedName1 || "Not provided"}</p>
+                          </div>
+                          <div>
+                            <span className="font-medium text-foreground">Proposed Name 2:</span>
+                            <p className="text-muted-foreground mt-1">{formData.proposedName2 || "Not provided"}</p>
                           </div>
                           <div>
                             <span className="font-medium text-foreground">Business Address:</span>
-                            <p className="text-muted-foreground mt-1">{formData.businessAddress}</p>
+                            <p className="text-muted-foreground mt-1">{formData.businessAddress || "Not provided"}</p>
                           </div>
                           <div>
                             <span className="font-medium text-foreground">Contact Email:</span>
-                            <p className="text-muted-foreground mt-1">{formData.email}</p>
+                            <p className="text-muted-foreground mt-1">{formData.email || "Not provided"}</p>
+                          </div>
+                          <div>
+                            <span className="font-medium text-foreground">Contact Phone:</span>
+                            <p className="text-muted-foreground mt-1">{formData.phone || "Not provided"}</p>
+                          </div>
+                          <div>
+                            <span className="font-medium text-foreground">Nature of Business:</span>
+                            <p className="text-muted-foreground mt-1">{formData.natureOfBusiness || "Not provided"}</p>
                           </div>
                         </>
                       )}
                     </div>
                   </div>
+
+                  {/* BN Specific Information */}
+                  {formData.registrationType === "bn" && (
+                    <div className="form-section">
+                      <h3 className="section-title">Director Information</h3>
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 text-sm">
+                        <div>
+                          <span className="font-medium text-foreground">Director Name:</span>
+                          <p className="text-muted-foreground mt-1">{formData.directorName || "Not provided"}</p>
+                        </div>
+                        <div>
+                          <span className="font-medium text-foreground">Director NIN:</span>
+                          <p className="text-muted-foreground mt-1">{formData.directorNIN || "Not provided"}</p>
+                        </div>
+                        <div>
+                          <span className="font-medium text-foreground">Director Phone:</span>
+                          <p className="text-muted-foreground mt-1">{formData.directorPhone || "Not provided"}</p>
+                        </div>
+                        <div>
+                          <span className="font-medium text-foreground">Passport Photo:</span>
+                          <p className="text-muted-foreground mt-1">
+                            {formData.passportPhoto && formData.passportPhoto.length > 0 
+                              ? `${formData.passportPhoto.length} file(s) uploaded` 
+                              : "Not uploaded"}
+                          </p>
+                        </div>
+                        <div>
+                          <span className="font-medium text-foreground">Sample Signature:</span>
+                          <p className="text-muted-foreground mt-1">
+                            {formData.sampleSignature && formData.sampleSignature.length > 0 
+                              ? `${formData.sampleSignature.length} file(s) uploaded` 
+                              : "Not uploaded"}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Company Specific Information */}
+                  {formData.registrationType === "company" && (
+                    <>
+                      {/* Directors Section */}
+                      <div className="form-section">
+                        <h3 className="section-title">Directors ({formData.directors?.length || 0})</h3>
+                        {formData.directors && formData.directors.length > 0 ? (
+                          <div className="space-y-4">
+                            {formData.directors.map((director: any, index: number) => (
+                              <div key={index} className="bg-secondary/50 p-4 rounded-lg">
+                                <h4 className="font-medium text-foreground mb-2">Director {index + 1}</h4>
+                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 text-sm">
+                                  <div>
+                                    <span className="font-medium">Full Name:</span>
+                                    <p className="text-muted-foreground">{director.fullName || "Not provided"}</p>
+                                  </div>
+                                  <div>
+                                    <span className="font-medium">Email:</span>
+                                    <p className="text-muted-foreground">{director.email || "Not provided"}</p>
+                                  </div>
+                                  <div>
+                                    <span className="font-medium">Phone:</span>
+                                    <p className="text-muted-foreground">{director.phoneNumber || "Not provided"}</p>
+                                  </div>
+                                  <div>
+                                    <span className="font-medium">Date of Birth:</span>
+                                    <p className="text-muted-foreground">{director.dateOfBirth || "Not provided"}</p>
+                                  </div>
+                                  <div className="lg:col-span-2">
+                                    <span className="font-medium">Residential Address:</span>
+                                    <p className="text-muted-foreground">{director.residentialAddress || "Not provided"}</p>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-muted-foreground">No directors added</p>
+                        )}
+                      </div>
+
+                      {/* Shareholders Section */}
+                      <div className="form-section">
+                        <h3 className="section-title">Shareholders ({formData.shareholders?.length || 0})</h3>
+                        {formData.shareholders && formData.shareholders.length > 0 ? (
+                          <div className="space-y-4">
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 text-sm mb-4">
+                              <div>
+                                <span className="font-medium text-foreground">Total Shares:</span>
+                                <p className="text-muted-foreground mt-1">{formData.totalShares || "Not specified"}</p>
+                              </div>
+                              <div>
+                                <span className="font-medium text-foreground">Allotment Details:</span>
+                                <p className="text-muted-foreground mt-1">{formData.allotmentDetails || "Not provided"}</p>
+                              </div>
+                            </div>
+                            {formData.shareholders.map((shareholder: any, index: number) => (
+                              <div key={index} className="bg-secondary/50 p-4 rounded-lg">
+                                <h4 className="font-medium text-foreground mb-2">Shareholder {index + 1}</h4>
+                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 text-sm">
+                                  <div>
+                                    <span className="font-medium">Full Name:</span>
+                                    <p className="text-muted-foreground">{shareholder.fullName || "Not provided"}</p>
+                                  </div>
+                                  <div>
+                                    <span className="font-medium">Email:</span>
+                                    <p className="text-muted-foreground">{shareholder.email || "Not provided"}</p>
+                                  </div>
+                                  <div>
+                                    <span className="font-medium">Phone:</span>
+                                    <p className="text-muted-foreground">{shareholder.phoneNumber || "Not provided"}</p>
+                                  </div>
+                                  <div>
+                                    <span className="font-medium">Date of Birth:</span>
+                                    <p className="text-muted-foreground">{shareholder.dateOfBirth || "Not provided"}</p>
+                                  </div>
+                                  <div>
+                                    <span className="font-medium">Shares:</span>
+                                    <p className="text-muted-foreground">{shareholder.shares || "Not specified"}</p>
+                                  </div>
+                                  <div className="lg:col-span-2">
+                                    <span className="font-medium">Residential Address:</span>
+                                    <p className="text-muted-foreground">{shareholder.residentialAddress || "Not provided"}</p>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-muted-foreground">No shareholders added</p>
+                        )}
+                      </div>
+                    </>
+                  )}
+
+                  {/* Trustees Specific Information */}
+                  {formData.registrationType === "trustees" && (
+                    <div className="form-section">
+                      <h3 className="section-title">Trustees ({formData.trustees?.length || 0})</h3>
+                      {formData.trustees && formData.trustees.length > 0 ? (
+                        <div className="space-y-4">
+                          {formData.trustees.map((trustee: any, index: number) => (
+                            <div key={index} className="bg-secondary/50 p-4 rounded-lg">
+                              <h4 className="font-medium text-foreground mb-2">Trustee {index + 1}</h4>
+                              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 text-sm">
+                                <div>
+                                  <span className="font-medium">Full Name:</span>
+                                  <p className="text-muted-foreground">{trustee.fullName || "Not provided"}</p>
+                                </div>
+                                <div>
+                                  <span className="font-medium">Email:</span>
+                                  <p className="text-muted-foreground">{trustee.email || "Not provided"}</p>
+                                </div>
+                                <div>
+                                  <span className="font-medium">Phone:</span>
+                                  <p className="text-muted-foreground">{trustee.phoneNumber || "Not provided"}</p>
+                                </div>
+                                <div>
+                                  <span className="font-medium">Date of Birth:</span>
+                                  <p className="text-muted-foreground">{trustee.dateOfBirth || "Not provided"}</p>
+                                </div>
+                                <div className="lg:col-span-2">
+                                  <span className="font-medium">Residential Address:</span>
+                                  <p className="text-muted-foreground">{trustee.residentialAddress || "Not provided"}</p>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-muted-foreground">No trustees added</p>
+                      )}
+                    </div>
+                  )}
 
                   <div className="bg-secondary border border-primary/30 p-4 sm:p-6 rounded-lg">
                     <div className="flex items-start space-x-3">
