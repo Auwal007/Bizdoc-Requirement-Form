@@ -193,197 +193,195 @@ export default function BusinessRegistrationForm() {
         console.log("[v0] Added sample signature:", file.name, file.size, "bytes")
       })
 
-      // Add files from directors/shareholders/trustees
-      // Handle files for directors, shareholders, and trustees with proper naming
-      formData.directors.forEach((director, directorIndex) => {
-        console.log(`[v0] Processing director ${directorIndex + 1}:`, director.fullName)
+        // Handle files from directors/shareholders/trustees with proper naming
+        formData.directors.forEach((director, directorIndex) => {
+          console.log(`[v0] Processing director ${directorIndex + 1}:`, director.fullName)
 
-        if (director.files?.idCard && director.files.idCard.length > 0) {
-          director.files.idCard.forEach((file: File) => {
-            submitFormData.append(`director_${directorIndex}_idCard`, file)
-            totalFiles++
-            console.log(`[v0] Added director ${directorIndex + 1} ID card:`, file.name, file.size, "bytes")
-          })
-        }
-        if (director.files?.passport && director.files.passport.length > 0) {
-          director.files.passport.forEach((file: File) => {
-            submitFormData.append(`director_${directorIndex}_passportPhotograph`, file)
-            totalFiles++
-            console.log(`[v0] Added director ${directorIndex + 1} passport photo:`, file.name, file.size, "bytes")
-          })
-        }
-        if (director.files?.signature && director.files.signature.length > 0) {
-          director.files.signature.forEach((file: File) => {
-            submitFormData.append(`director_${directorIndex}_sampleSignature`, file)
-            totalFiles++
-            console.log(`[v0] Added director ${directorIndex + 1} sample signature:`, file.name, file.size, "bytes")
-          })
-        }
-      })
-
-      formData.shareholders.forEach((shareholder, shareholderIndex) => {
-        console.log(`[v0] Processing shareholder ${shareholderIndex + 1}:`, shareholder.fullName)
-
-        if (shareholder.files?.idCard && shareholder.files.idCard.length > 0) {
-          shareholder.files.idCard.forEach((file: File) => {
-            submitFormData.append(`shareholder_${shareholderIndex}_idCard`, file)
-            totalFiles++
-            console.log(`[v0] Added shareholder ${shareholderIndex + 1} ID card:`, file.name, file.size, "bytes")
-          })
-        }
-        if (shareholder.files?.passport && shareholder.files.passport.length > 0) {
-          shareholder.files.passport.forEach((file: File) => {
-            submitFormData.append(`shareholder_${shareholderIndex}_passportPhotograph`, file)
-            totalFiles++
-            console.log(`[v0] Added shareholder ${shareholderIndex + 1} passport photo:`, file.name, file.size, "bytes")
-          })
-        }
-        if (shareholder.files?.signature && shareholder.files.signature.length > 0) {
-          shareholder.files.signature.forEach((file: File) => {
-            submitFormData.append(`shareholder_${shareholderIndex}_sampleSignature`, file)
-            totalFiles++
-            console.log(`[v0] Added shareholder ${shareholderIndex + 1} sample signature:`, file.name, file.size, "bytes")
-          })
-        }
-      })
-
-      formData.trustees.forEach((trustee, trusteeIndex) => {
-        console.log(`[v0] Processing trustee ${trusteeIndex + 1}:`, trustee.fullName)
-
-        if (trustee.files?.idCard && trustee.files.idCard.length > 0) {
-          trustee.files.idCard.forEach((file: File) => {
-            submitFormData.append(`trustee_${trusteeIndex}_idCard`, file)
-            totalFiles++
-            console.log(`[v0] Added trustee ${trusteeIndex + 1} ID card:`, file.name, file.size, "bytes")
-          })
-        }
-        if (trustee.files?.passport && trustee.files.passport.length > 0) {
-          trustee.files.passport.forEach((file: File) => {
-            submitFormData.append(`trustee_${trusteeIndex}_passportPhotograph`, file)
-            totalFiles++
-            console.log(`[v0] Added trustee ${trusteeIndex + 1} passport photo:`, file.name, file.size, "bytes")
-          })
-        }
-        if (trustee.files?.signature && trustee.files.signature.length > 0) {
-          trustee.files.signature.forEach((file: File) => {
-            submitFormData.append(`trustee_${trusteeIndex}_sampleSignature`, file)
-            totalFiles++
-            console.log(`[v0] Added trustee ${trusteeIndex + 1} sample signature:`, file.name, file.size, "bytes")
-          })
-        }
-      })
-
-      console.log("[v0] Total files added:", totalFiles)
-
-      console.log("[v0] FormData entries:")
-      for (const [key, value] of submitFormData.entries()) {
-        if (value instanceof File) {
-          console.log(`[v0] ${key}: File(${value.name}, ${value.size} bytes, ${value.type})`)
-        } else {
-          console.log(`[v0] ${key}:`, value)
-        }
-      }
-
-      console.log("[v0] Submitting form data to API...")
-      console.log("[v0] API endpoint: /api/submit-form")
-
-      const response = await fetch("/api/submit-form", {
-        method: "POST",
-        body: submitFormData,
-      })
-
-      console.log("[v0] API response received")
-      console.log("[v0] Response status:", response.status)
-      console.log("[v0] Response status text:", response.statusText)
-      console.log("[v0] Response ok:", response.ok)
-      console.log("[v0] Response headers:", Object.fromEntries(response.headers.entries()))
-
-      let result
-      try {
-        const responseText = await response.text()
-        console.log("[v0] Raw response text:", responseText)
-        result = JSON.parse(responseText)
-        console.log("[v0] Parsed response data:", result)
-      } catch (parseError) {
-        console.error("[v0] Failed to parse response as JSON:", parseError)
-        throw new Error(`Server returned invalid response: ${response.status} ${response.statusText}`)
-      }
-
-      if (result.success) {
-        console.log("[v0] SUCCESS: Form submitted successfully")
-        
-        toast.success("Form submitted successfully!", {
-          description: "Your application has been received and is being processed.",
-          duration: 5000,
+          if (director.files?.idCard && director.files.idCard.length > 0) {
+            director.files.idCard.forEach((file: File) => {
+              submitFormData.append(`director_${directorIndex}_idCard`, file)
+              totalFiles++
+              console.log(`[v0] Added director ${directorIndex + 1} ID card:`, file.name, file.size, "bytes")
+            })
+          }
+          if (director.files?.passport && director.files.passport.length > 0) {
+            director.files.passport.forEach((file: File) => {
+              submitFormData.append(`director_${directorIndex}_passportPhotograph`, file)
+              totalFiles++
+              console.log(`[v0] Added director ${directorIndex + 1} passport photo:`, file.name, file.size, "bytes")
+            })
+          }
+          if (director.files?.signature && director.files.signature.length > 0) {
+            director.files.signature.forEach((file: File) => {
+              submitFormData.append(`director_${directorIndex}_sampleSignature`, file)
+              totalFiles++
+              console.log(`[v0] Added director ${directorIndex + 1} sample signature:`, file.name, file.size, "bytes")
+            })
+          }
         })
 
-        // Show clean success message
-        setShowSuccessModal(true)
-        
-        // Reset form after successful submission
-        setTimeout(() => {
-          setCurrentStep(0)
-          setFormData({
-            registrationType: "",
-            businessName: "",
-            organizationName: "",
-            email: "",
-            phone: "",
-            businessAddress: "",
-            organizationEmail: "",
-            organizationPhone: "",
-            officeAddress: "",
-            totalShares: undefined,
-            keyObjectives: "",
-            trusteeTenure: "",
-            sealCustodian: "",
-            fundingSources: "",
-            proposedName1: "",
-            proposedName2: "",
-            natureOfBusiness: "",
-            directorName: "",
-            directorNIN: "",
-            directorPhone: "",
-            directors: [],
-            shareholders: [],
-            trustees: [],
-            passportPhotograph: [],
-            sampleSignature: [],
+        formData.shareholders.forEach((shareholder, shareholderIndex) => {
+          console.log(`[v0] Processing shareholder ${shareholderIndex + 1}:`, shareholder.fullName)
+
+          if (shareholder.files?.idCard && shareholder.files.idCard.length > 0) {
+            shareholder.files.idCard.forEach((file: File) => {
+              submitFormData.append(`shareholder_${shareholderIndex}_idCard`, file)
+              totalFiles++
+              console.log(`[v0] Added shareholder ${shareholderIndex + 1} ID card:`, file.name, file.size, "bytes")
+            })
+          }
+          if (shareholder.files?.passport && shareholder.files.passport.length > 0) {
+            shareholder.files.passport.forEach((file: File) => {
+              submitFormData.append(`shareholder_${shareholderIndex}_passportPhotograph`, file)
+              totalFiles++
+              console.log(`[v0] Added shareholder ${shareholderIndex + 1} passport photo:`, file.name, file.size, "bytes")
+            })
+          }
+          if (shareholder.files?.signature && shareholder.files.signature.length > 0) {
+            shareholder.files.signature.forEach((file: File) => {
+              submitFormData.append(`shareholder_${shareholderIndex}_sampleSignature`, file)
+              totalFiles++
+              console.log(`[v0] Added shareholder ${shareholderIndex + 1} sample signature:`, file.name, file.size, "bytes")
+            })
+          }
+        })
+
+        formData.trustees.forEach((trustee, trusteeIndex) => {
+          console.log(`[v0] Processing trustee ${trusteeIndex + 1}:`, trustee.fullName)
+
+          if (trustee.files?.idCard && trustee.files.idCard.length > 0) {
+            trustee.files.idCard.forEach((file: File) => {
+              submitFormData.append(`trustee_${trusteeIndex}_idCard`, file)
+              totalFiles++
+              console.log(`[v0] Added trustee ${trusteeIndex + 1} ID card:`, file.name, file.size, "bytes")
+            })
+          }
+          if (trustee.files?.passport && trustee.files.passport.length > 0) {
+            trustee.files.passport.forEach((file: File) => {
+              submitFormData.append(`trustee_${trusteeIndex}_passportPhotograph`, file)
+              totalFiles++
+              console.log(`[v0] Added trustee ${trusteeIndex + 1} passport photo:`, file.name, file.size, "bytes")
+            })
+          }
+          if (trustee.files?.signature && trustee.files.signature.length > 0) {
+            trustee.files.signature.forEach((file: File) => {
+              submitFormData.append(`trustee_${trusteeIndex}_sampleSignature`, file)
+              totalFiles++
+              console.log(`[v0] Added trustee ${trusteeIndex + 1} sample signature:`, file.name, file.size, "bytes")
+            })
+          }
+        })
+
+        console.log("[v0] Total files added:", totalFiles)
+
+        console.log("[v0] FormData entries:")
+        for (const [key, value] of submitFormData.entries()) {
+          if (value instanceof File) {
+            console.log(`[v0] ${key}: File(${value.name}, ${value.size} bytes, ${value.type})`)
+          } else {
+            console.log(`[v0] ${key}:`, value)
+          }
+        }
+
+        console.log("[v0] Submitting form data to API...")
+        console.log("[v0] API endpoint: /api/submit-form")
+
+        const response = await fetch("/api/submit-form", {
+          method: "POST",
+          body: submitFormData,
+        })
+
+        console.log("[v0] API response received")
+        console.log("[v0] Response status:", response.status)
+        console.log("[v0] Response status text:", response.statusText)
+        console.log("[v0] Response ok:", response.ok)
+        console.log("[v0] Response headers:", Object.fromEntries(response.headers.entries()))
+
+        let result
+        try {
+          const responseText = await response.text()
+          console.log("[v0] Raw response text:", responseText)
+          result = JSON.parse(responseText)
+          console.log("[v0] Parsed response data:", result)
+        } catch (parseError) {
+          console.error("[v0] Failed to parse response as JSON:", parseError)
+          throw new Error(`Server returned invalid response: ${response.status} ${response.statusText}`)
+        }
+
+        if (result.success) {
+          console.log("[v0] SUCCESS: Form submitted successfully")
+          
+          toast.success("Form submitted successfully!", {
+            description: "Your application has been received and is being processed.",
+            duration: 5000,
           })
-        }, 3000)
-        console.log("[v0] Form submitted successfully:", result.data)
-      } else {
-        console.error("[v0] API returned error:", result.message, result.error)
-        throw new Error(result.message || "Failed to submit form")
+
+          // Show clean success message
+          setShowSuccessModal(true)
+          
+          // Reset form after successful submission
+          setTimeout(() => {
+            setCurrentStep(0)
+            setFormData({
+              registrationType: "",
+              organizationName: "",
+              email: "",
+              phone: "",
+              businessAddress: "",
+              organizationEmail: "",
+              organizationPhone: "",
+              officeAddress: "",
+              totalShares: 0,
+              keyObjectives: "",
+              trusteeTenure: "",
+              sealCustodian: "",
+              fundingSources: "",
+              proposedName1: "",
+              proposedName2: "",
+              natureOfBusiness: "",
+              directorName: "",
+              directorNIN: "",
+              directorPhone: "",
+              directors: [],
+              shareholders: [],
+              trustees: [],
+              passportPhoto: [],
+              sampleSignature: [],
+            })
+          }, 3000)
+          console.log("[v0] Form submitted successfully:", result.data)
+        } else {
+          console.error("[v0] API returned error:", result.message, result.error)
+          throw new Error(result.message || "Failed to submit form")
+        }
+      } catch (error) {
+        console.error("[v0] === FORM SUBMISSION ERROR ===")
+        console.error("[v0] Error type:", typeof error)
+        console.error("[v0] Error:", error)
+
+        if (error instanceof Error) {
+          console.error("[v0] Error name:", error.name)
+          console.error("[v0] Error message:", error.message)
+          console.error("[v0] Error stack:", error.stack)
+        }
+
+        let errorMessage = "An unexpected error occurred. Please try again."
+
+        if (error instanceof TypeError && error.message.includes("fetch")) {
+          errorMessage = "Network error. Please check your internet connection and try again."
+        } else if (error instanceof Error) {
+          errorMessage = error.message
+        }
+
+        toast.error("Failed to submit form", {
+          description: errorMessage,
+          duration: 5000,
+        })
+      } finally {
+        setIsSubmitting(false)
+        console.log("[v0] === FORM SUBMISSION DEBUG END ===")
       }
-    } catch (error) {
-      console.error("[v0] === FORM SUBMISSION ERROR ===")
-      console.error("[v0] Error type:", typeof error)
-      console.error("[v0] Error:", error)
-
-      if (error instanceof Error) {
-        console.error("[v0] Error name:", error.name)
-        console.error("[v0] Error message:", error.message)
-        console.error("[v0] Error stack:", error.stack)
-      }
-
-      let errorMessage = "An unexpected error occurred. Please try again."
-
-      if (error instanceof TypeError && error.message.includes("fetch")) {
-        errorMessage = "Network error. Please check your internet connection and try again."
-      } else if (error instanceof Error) {
-        errorMessage = error.message
-      }
-
-      toast.error("Failed to submit form", {
-        description: errorMessage,
-        duration: 5000,
-      })
-    } finally {
-      setIsSubmitting(false)
-      console.log("[v0] === FORM SUBMISSION DEBUG END ===")
     }
-  }
 
   return (
     <div className="min-h-screen bg-background">
