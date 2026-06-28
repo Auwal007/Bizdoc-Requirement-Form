@@ -13,6 +13,7 @@ import { toast } from "sonner"
 
 interface FormData {
   registrationType: "bn" | "company" | "trustees" | ""
+  businessNameType?: "sole" | "partnership"
   proposedName1: string
   proposedName2: string
   proposedName3: string
@@ -21,11 +22,7 @@ interface FormData {
   phone: string
   natureOfBusiness: string
   // BN specific
-  directorName: string
-  directorNIN: string
-  directorPhone: string
-  passportPhoto: File[]
-  sampleSignature: File[]
+  proprietors: any[]
   // Company specific
   directors: any[]
   shareholders: any[]
@@ -42,8 +39,6 @@ interface FormData {
   trustees: any[]
 }
 
-const steps = ["Registration Type", "Business Details", "Directors & Shareholders", "Review & Submit"]
-
 export default function BusinessRegistrationForm() {
   const [currentStep, setCurrentStep] = useState(0)
   const [showHelp, setShowHelp] = useState(false)
@@ -51,6 +46,7 @@ export default function BusinessRegistrationForm() {
   const [showSuccessModal, setShowSuccessModal] = useState(false)
   const [formData, setFormData] = useState<FormData>({
     registrationType: "",
+    businessNameType: "sole",
     proposedName1: "",
     proposedName2: "",
     proposedName3: "",
@@ -58,11 +54,7 @@ export default function BusinessRegistrationForm() {
     email: "",
     phone: "",
     natureOfBusiness: "",
-    directorName: "",
-    directorNIN: "",
-    directorPhone: "",
-    passportPhoto: [],
-    sampleSignature: [],
+    proprietors: [],
     directors: [],
     shareholders: [],
     totalShares: 0,
@@ -78,6 +70,20 @@ export default function BusinessRegistrationForm() {
     trustees: [],
   })
   const [submissionResult, setSubmissionResult] = useState(null)
+
+  const getSteps = () => {
+    switch (formData.registrationType) {
+      case "bn":
+        return ["Registration Type", "Business Details", "Proprietor Details", "Review & Submit"]
+      case "company":
+        return ["Registration Type", "Business Details", "Directors & Shareholders", "Review & Submit"]
+      case "trustees":
+        return ["Registration Type", "Business Details", "Trustee Details", "Review & Submit"]
+      default:
+        return ["Registration Type", "Business Details", "Details", "Review & Submit"]
+    }
+  }
+  const steps = getSteps()
 
   const updateFormData = (field: keyof FormData, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
@@ -128,8 +134,8 @@ export default function BusinessRegistrationForm() {
         toast.error("Please fill in all required organization details")
         return
       }
-      if (formData.trustees.length === 0) {
-        toast.error("Please add at least one trustee")
+      if (formData.trustees.length < 2) {
+        toast.error("Please add at least two (2) trustees")
         return
       }
     } else {
@@ -145,8 +151,16 @@ export default function BusinessRegistrationForm() {
       }
 
       if (formData.registrationType === "bn") {
-        if (!formData.directorName || !formData.directorNIN || !formData.directorPhone) {
-          toast.error("Please fill in all director information for Business Name registration")
+        if (formData.proprietors.length === 0) {
+          toast.error("Please add at least one proprietor")
+          return
+        }
+        if (formData.businessNameType === "sole" && formData.proprietors.length !== 1) {
+          toast.error("A Sole Proprietorship must have exactly one (1) proprietor. Please add/remove proprietors.")
+          return
+        }
+        if (formData.businessNameType === "partnership" && formData.proprietors.length < 2) {
+          toast.error("A Partnership must have at least two (2) partners/proprietors. Please add more.")
           return
         }
       } else if (formData.registrationType === "company") {
@@ -180,16 +194,16 @@ export default function BusinessRegistrationForm() {
         directorsCount: formData.directors.length,
         shareholdersCount: formData.shareholders.length,
         trusteesCount: formData.trustees.length,
+        proprietorsCount: formData.proprietors.length,
       })
 
       const submitFormData = new FormData()
 
       // Add all form fields
       Object.entries(formData).forEach(([key, value]) => {
-        if (key === "directors" || key === "shareholders" || key === "trustees") {
+        if (key === "directors" || key === "shareholders" || key === "trustees" || key === "proprietors") {
           submitFormData.append(key, JSON.stringify(value))
         } else if (Array.isArray(value)) {
-          // Handle file arrays
           value.forEach((file, index) => {
             if (file instanceof File) {
               submitFormData.append(`${key}_${index}`, file)
@@ -200,29 +214,74 @@ export default function BusinessRegistrationForm() {
         }
       })
 
-      // Add files from directors, shareholders, and trustees
+      const fileTypeMap: { [key: string]: string } = {
+        idCard: "idCard",
+        passport: "passportPhotograph",
+        signature: "sampleSignature"
+      }
+
+      // Add files from directors
       formData.directors.forEach((person, index) => {
-        Object.entries(person).forEach(([field, value]) => {
-          if (value instanceof File) {
-            submitFormData.append(`director_${index}_${field}`, value)
-          }
-        })
+        if (person.files) {
+          Object.entries(person.files).forEach(([fileType, fileList]) => {
+            if (Array.isArray(fileList)) {
+              fileList.forEach((file) => {
+                if (file instanceof File) {
+                  const backendType = fileTypeMap[fileType] || fileType
+                  submitFormData.append(`director_${index}_${backendType}`, file)
+                }
+              })
+            }
+          })
+        }
       })
 
+      // Add files from shareholders
       formData.shareholders.forEach((person, index) => {
-        Object.entries(person).forEach(([field, value]) => {
-          if (value instanceof File) {
-            submitFormData.append(`shareholder_${index}_${field}`, value)
-          }
-        })
+        if (person.files) {
+          Object.entries(person.files).forEach(([fileType, fileList]) => {
+            if (Array.isArray(fileList)) {
+              fileList.forEach((file) => {
+                if (file instanceof File) {
+                  const backendType = fileTypeMap[fileType] || fileType
+                  submitFormData.append(`shareholder_${index}_${backendType}`, file)
+                }
+              })
+            }
+          })
+        }
       })
 
+      // Add files from trustees
       formData.trustees.forEach((person, index) => {
-        Object.entries(person).forEach(([field, value]) => {
-          if (value instanceof File) {
-            submitFormData.append(`trustee_${index}_${field}`, value)
-          }
-        })
+        if (person.files) {
+          Object.entries(person.files).forEach(([fileType, fileList]) => {
+            if (Array.isArray(fileList)) {
+              fileList.forEach((file) => {
+                if (file instanceof File) {
+                  const backendType = fileTypeMap[fileType] || fileType
+                  submitFormData.append(`trustee_${index}_${backendType}`, file)
+                }
+              })
+            }
+          })
+        }
+      })
+
+      // Add files from proprietors
+      formData.proprietors.forEach((person, index) => {
+        if (person.files) {
+          Object.entries(person.files).forEach(([fileType, fileList]) => {
+            if (Array.isArray(fileList)) {
+              fileList.forEach((file) => {
+                if (file instanceof File) {
+                  const backendType = fileTypeMap[fileType] || fileType
+                  submitFormData.append(`proprietor_${index}_${backendType}`, file)
+                }
+              })
+            }
+          })
+        }
       })
 
       console.log("[v0] Submitting to API...")
@@ -246,10 +305,8 @@ export default function BusinessRegistrationForm() {
       toast.success("Form submitted successfully!")
 
       // Show success message with links
-      if (result.folderUrl || result.documentUrl) {
-        const message = `Your registration has been submitted successfully! ${
-          result.folderUrl ? `View your files: ${result.folderUrl}` : ""
-        } ${result.documentUrl ? `View your document: ${result.documentUrl}` : ""}`
+      if (result.folderUrl) {
+        const message = `Your registration has been submitted successfully! View your Google Drive folder: ${result.folderUrl}`
         toast.success(message, { duration: 10000 })
       }
 
@@ -257,6 +314,7 @@ export default function BusinessRegistrationForm() {
       setCurrentStep(0)
       setFormData({
         registrationType: "",
+        businessNameType: "sole",
         proposedName1: "",
         proposedName2: "",
         proposedName3: "",
@@ -264,11 +322,7 @@ export default function BusinessRegistrationForm() {
         email: "",
         phone: "",
         natureOfBusiness: "",
-        directorName: "",
-        directorNIN: "",
-        directorPhone: "",
-        passportPhoto: [],
-        sampleSignature: [],
+        proprietors: [],
         directors: [],
         shareholders: [],
         totalShares: 0,
@@ -784,63 +838,58 @@ export default function BusinessRegistrationForm() {
 
                 {/* BN Specific Sections */}
                 {formData.registrationType === "bn" && (
-                  <>
-                    <Card className="card-enhanced">
-                      <CardHeader>
-                        <CardTitle className="section-title">Director Information</CardTitle>
-                      </CardHeader>
-                      <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-                        <div>
-                          <label className="form-label">Director Name</label>
-                          <input
-                            type="text"
-                            className="form-input"
-                            value={formData.directorName}
-                            onChange={(e) => updateFormData("directorName", e.target.value)}
-                            placeholder="Enter director's full name"
-                          />
+                  <Card className="card-enhanced">
+                    <CardHeader>
+                      <CardTitle className="section-title">Business Name Structure</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <p className="text-sm text-muted-foreground">
+                        Select whether this is a sole proprietorship (single owner) or partnership (multiple owners).
+                      </p>
+                      <RadioGroup
+                        value={formData.businessNameType || "sole"}
+                        onValueChange={(value) => updateFormData("businessNameType", value as "sole" | "partnership")}
+                        className="grid grid-cols-1 sm:grid-cols-2 gap-4"
+                      >
+                        <div
+                          className={`cursor-pointer p-4 border-2 rounded-lg transition-all duration-200 ${
+                            (formData.businessNameType || "sole") === "sole"
+                              ? "border-primary bg-primary/10 shadow-sm"
+                              : "border-border hover:border-primary/50 hover:bg-secondary/50"
+                          }`}
+                          onClick={() => updateFormData("businessNameType", "sole")}
+                        >
+                          <div className="flex items-start space-x-3">
+                            <RadioGroupItem value="sole" id="sole" className="mt-1" />
+                            <div>
+                              <Label htmlFor="sole" className="font-bold cursor-pointer block text-sm sm:text-base">
+                                Sole Proprietorship
+                              </Label>
+                              <p className="text-xs text-muted-foreground mt-1">Single owner / proprietor</p>
+                            </div>
+                          </div>
                         </div>
-                        <div>
-                          <label className="form-label">NIN</label>
-                          <input
-                            type="text"
-                            className="form-input"
-                            value={formData.directorNIN}
-                            onChange={(e) => updateFormData("directorNIN", e.target.value)}
-                            placeholder="Enter NIN"
-                          />
+                        <div
+                          className={`cursor-pointer p-4 border-2 rounded-lg transition-all duration-200 ${
+                            formData.businessNameType === "partnership"
+                              ? "border-primary bg-primary/10 shadow-sm"
+                              : "border-border hover:border-primary/50 hover:bg-secondary/50"
+                          }`}
+                          onClick={() => updateFormData("businessNameType", "partnership")}
+                        >
+                          <div className="flex items-start space-x-3">
+                            <RadioGroupItem value="partnership" id="partnership" className="mt-1" />
+                            <div>
+                              <Label htmlFor="partnership" className="font-bold cursor-pointer block text-sm sm:text-base">
+                                Partnership
+                              </Label>
+                              <p className="text-xs text-muted-foreground mt-1">Two or more partners / proprietors</p>
+                            </div>
+                          </div>
                         </div>
-                        <div>
-                          <label className="form-label">Phone Number</label>
-                          <input
-                            type="tel"
-                            className="form-input"
-                            value={formData.directorPhone}
-                            onChange={(e) => updateFormData("directorPhone", e.target.value)}
-                            placeholder="Enter phone number"
-                          />
-                        </div>
-                      </CardContent>
-                    </Card>
-
-                    <Card className="card-enhanced">
-                      <CardHeader>
-                        <CardTitle className="section-title">Required Documents</CardTitle>
-                      </CardHeader>
-                      <CardContent className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-                        <FileUpload
-                          label="Passport Photograph"
-                          accept="image/*"
-                          onFilesChange={(files) => updateFormData("passportPhoto", files)}
-                        />
-                        <FileUpload
-                          label="Sample Signature"
-                          accept="image/*,.pdf"
-                          onFilesChange={(files) => updateFormData("sampleSignature", files)}
-                        />
-                      </CardContent>
-                    </Card>
-                  </>
+                      </RadioGroup>
+                    </CardContent>
+                  </Card>
                 )}
 
                 {/* Nature of Business Section */}
@@ -957,9 +1006,39 @@ export default function BusinessRegistrationForm() {
               </Card>
             )}
 
-            {((currentStep === 2 && formData.registrationType === "bn") ||
-              (currentStep === 3 &&
-                (formData.registrationType === "company" || formData.registrationType === "trustees"))) && (
+            {currentStep === 2 && formData.registrationType === "bn" && (
+              <Card className="card-enhanced">
+                <CardHeader>
+                  <CardTitle className="section-title">Proprietor Details</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6 sm:space-y-8">
+                  <DynamicPersonForm
+                    title="Particulars of Proprietors"
+                    type="proprietor"
+                    persons={formData.proprietors}
+                    onPersonsChange={(proprietors) => updateFormData("proprietors", proprietors)}
+                  />
+
+                  <div className="flex flex-col sm:flex-row justify-between gap-3 sm:gap-0 pt-4 sm:pt-6">
+                    <Button
+                      onClick={prevStep}
+                      variant="outline"
+                      className="px-6 py-3 bg-transparent order-2 sm:order-1"
+                      disabled={isSubmitting}
+                    >
+                      <ChevronLeft className="mr-2 h-4 w-4" />
+                      Back
+                    </Button>
+                    <Button onClick={nextStep} className="submit-button order-1 sm:order-2">
+                      Review Application
+                      <ChevronRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {currentStep === 3 && (
               <Card className="card-enhanced">
                 <CardHeader>
                   <CardTitle className="section-title">Review & Submit</CardTitle>
@@ -1097,39 +1176,76 @@ export default function BusinessRegistrationForm() {
                   {/* BN Specific Information */}
                   {formData.registrationType === "bn" && (
                     <div className="form-section">
-                      <h3 className="section-title">Director Information</h3>
-                      <div className="bg-secondary/50 p-4 rounded-lg">
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 text-sm">
-                          <div>
-                            <span className="font-medium text-foreground">Director Full Name:</span>
-                            <p className="text-muted-foreground mt-1">{formData.directorName || "Not provided"}</p>
-                          </div>
-                          <div>
-                            <span className="font-medium text-foreground">Director NIN:</span>
-                            <p className="text-muted-foreground mt-1">{formData.directorNIN || "Not provided"}</p>
-                          </div>
-                          <div>
-                            <span className="font-medium text-foreground">Director Phone Number:</span>
-                            <p className="text-muted-foreground mt-1">{formData.directorPhone || "Not provided"}</p>
-                          </div>
-                          <div>
-                            <span className="font-medium text-foreground">Passport Photograph:</span>
-                            <p className="text-muted-foreground mt-1">
-                              {formData.passportPhoto && formData.passportPhoto.length > 0
-                                ? `${formData.passportPhoto.length} file(s) uploaded - ${formData.passportPhoto.map((f) => f.name).join(", ")}`
-                                : "Not uploaded"}
-                            </p>
-                          </div>
-                          <div>
-                            <span className="font-medium text-foreground">Sample Signature:</span>
-                            <p className="text-muted-foreground mt-1">
-                              {formData.sampleSignature && formData.sampleSignature.length > 0
-                                ? `${formData.sampleSignature.length} file(s) uploaded - ${formData.sampleSignature.map((f) => f.name).join(", ")}`
-                                : "Not uploaded"}
-                            </p>
-                          </div>
+                      <h3 className="section-title">Proprietors / Partners ({formData.proprietors?.length || 0})</h3>
+                      {formData.proprietors && formData.proprietors.length > 0 ? (
+                        <div className="space-y-4">
+                          {formData.proprietors.map((proprietor: any, index: number) => (
+                            <div key={index} className="bg-secondary/50 p-4 rounded-lg">
+                              <h4 className="font-medium text-foreground mb-2">Proprietor {index + 1}</h4>
+                              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 text-sm">
+                                <div>
+                                  <span className="font-medium">Full Name:</span>
+                                  <p className="text-muted-foreground">{proprietor.fullName || "Not provided"}</p>
+                                </div>
+                                <div>
+                                  <span className="font-medium">Email:</span>
+                                  <p className="text-muted-foreground">{proprietor.email || "Not provided"}</p>
+                                </div>
+                                <div>
+                                  <span className="font-medium">Phone Number:</span>
+                                  <p className="text-muted-foreground">{proprietor.phone || "Not provided"}</p>
+                                </div>
+                                <div>
+                                  <span className="font-medium">NIN:</span>
+                                  <p className="text-muted-foreground">{proprietor.nin || "Not provided"}</p>
+                                </div>
+                                <div>
+                                  <span className="font-medium">Date of Birth:</span>
+                                  <p className="text-muted-foreground">{proprietor.dateOfBirth || "Not provided"}</p>
+                                </div>
+                                <div className="lg:col-span-2">
+                                  <span className="font-medium">Residential Address:</span>
+                                  <p className="text-muted-foreground">
+                                    {proprietor.residentialAddress || "Not provided"}
+                                  </p>
+                                </div>
+                              </div>
+                              {/* File uploads */}
+                              <div className="mt-4 pt-3 border-t border-muted">
+                                <h5 className="font-medium text-foreground mb-2">Uploaded Documents</h5>
+                                <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 text-sm">
+                                  <div>
+                                    <span className="font-medium">ID Card:</span>
+                                    <p className="text-muted-foreground">
+                                      {proprietor.files?.idCard && proprietor.files.idCard.length > 0
+                                        ? `${proprietor.files.idCard.length} file(s) uploaded - ${proprietor.files.idCard.map((f: any) => f.name).join(", ")}`
+                                        : "Not uploaded"}
+                                    </p>
+                                  </div>
+                                  <div>
+                                    <span className="font-medium">Passport Photograph:</span>
+                                    <p className="text-muted-foreground">
+                                      {proprietor.files?.passport && proprietor.files.passport.length > 0
+                                        ? `${proprietor.files.passport.length} file(s) uploaded - ${proprietor.files.passport.map((f: any) => f.name).join(", ")}`
+                                        : "Not uploaded"}
+                                    </p>
+                                  </div>
+                                  <div>
+                                    <span className="font-medium">Sample Signature:</span>
+                                    <p className="text-muted-foreground">
+                                      {proprietor.files?.signature && proprietor.files.signature.length > 0
+                                        ? `${proprietor.files.signature.length} file(s) uploaded - ${proprietor.files.signature.map((f: any) => f.name).join(", ")}`
+                                        : "Not uploaded"}
+                                    </p>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
                         </div>
-                      </div>
+                      ) : (
+                        <p className="text-muted-foreground">No proprietors added</p>
+                      )}
                     </div>
                   )}
 

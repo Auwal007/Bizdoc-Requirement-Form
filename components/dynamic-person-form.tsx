@@ -25,7 +25,7 @@ interface PersonData {
 
 interface DynamicPersonFormProps {
   title: string
-  type: "director" | "shareholder" | "trustee"
+  type: "director" | "shareholder" | "trustee" | "proprietor"
   persons: PersonData[]
   onPersonsChange: (persons: PersonData[]) => void
   totalShares?: number
@@ -40,9 +40,9 @@ export function DynamicPersonForm({ title, type, persons, onPersonsChange, total
       phone: "",
       serviceAddress: type === "director" ? "" : undefined,
       residentialAddress: "",
-      dateOfBirth: type === "director" || type === "trustee" ? "" : undefined,
+      dateOfBirth: type === "director" || type === "trustee" || type === "proprietor" ? "" : undefined,
       shareAllocation: type === "shareholder" ? 0 : undefined,
-      nin: type === "trustee" ? "" : undefined,
+      nin: "",
       position: type === "trustee" ? "" : undefined,
       files: {
         idCard: [],
@@ -77,6 +77,8 @@ export function DynamicPersonForm({ title, type, persons, onPersonsChange, total
         return "Shareholder"
       case "trustee":
         return "Trustee"
+      case "proprietor":
+        return "Proprietor / Partner"
       default:
         return "Person"
     }
@@ -142,27 +144,25 @@ export function DynamicPersonForm({ title, type, persons, onPersonsChange, total
                   placeholder="Enter phone number"
                 />
               </div>
+              <div>
+                <label className="form-label">NIN Number</label>
+                <Input
+                  className="form-input"
+                  value={person.nin || ""}
+                  onChange={(e) => updatePerson(person.id, "nin", e.target.value)}
+                  placeholder="Enter NIN number"
+                />
+              </div>
               {type === "trustee" && (
-                <>
-                  <div>
-                    <label className="form-label">NIN Number</label>
-                    <Input
-                      className="form-input"
-                      value={person.nin}
-                      onChange={(e) => updatePerson(person.id, "nin", e.target.value)}
-                      placeholder="Enter NIN number"
-                    />
-                  </div>
-                  <div>
-                    <label className="form-label">Trustee Position</label>
-                    <Input
-                      className="form-input"
-                      value={person.position}
-                      onChange={(e) => updatePerson(person.id, "position", e.target.value)}
-                      placeholder="e.g., Chairman, Secretary"
-                    />
-                  </div>
-                </>
+                <div>
+                  <label className="form-label">Trustee Position</label>
+                  <Input
+                    className="form-input"
+                    value={person.position}
+                    onChange={(e) => updatePerson(person.id, "position", e.target.value)}
+                    placeholder="e.g., Chairman, Secretary"
+                  />
+                </div>
               )}
               {type === "director" && (
                 <div>

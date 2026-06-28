@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-import type { FormData, UploadedFile } from "@/lib/dropbox-services"
+import { submitToGoogleAppsScript, type GoogleFilePayload, type GoogleRegistrationPayload } from "@/lib/google-services"
 
 function safeJsonParse(jsonString: string | null): any {
   if (!jsonString) return null
@@ -17,63 +17,135 @@ function safeParseInt(value: string | null): number | undefined {
   return isNaN(parsed) ? undefined : parsed
 }
 
-function sanitizeInput(input: string | null): string {
-  if (!input) return ""
-  return input.replace(/[<>]/g, "").trim()
+function sanitizeInput(value: string | null): string {
+  if (!value) return ""
+  return value.replace(/[<>]/g, "").trim()
+}
+
+function getReadableFileType(fileType: string): string {
+  const typeMap: { [key: string]: string } = {
+    idCard: "ID Card",
+    passportPhotograph: "Passport Photograph",
+    sampleSignature: "Sample Signature",
+    memart: "Memorandum Articles",
+    boardResolution: "Board Resolution",
+    constitutionDocument: "Constitution Document",
+  }
+  return typeMap[fileType] || fileType;
+}
+
+function getCleanFileName(fieldName: string, originalName: string, registrationData: any): string {
+  const parts = fieldName.split("_");
+  const extension = originalName.substring(originalName.lastIndexOf("."));
+  if (parts.length >= 3) {
+    const personType = parts[0]; // director, shareholder, trustee, proprietor
+    const index = parseInt(parts[1], 10);
+    const fileType = parts[2];
+    
+    let personName = "";
+    if (personType === "director") {
+      personName = registrationData.directors?.[index]?.fullName;
+    } else if (personType === "shareholder") {
+      personName = registrationData.shareholders?.[index]?.fullName;
+    } else if (personType === "trustee") {
+      personName = registrationData.trustees?.[index]?.fullName;
+    } else if (personType === "proprietor") {
+      personName = registrationData.proprietors?.[index]?.fullName;
+    }
+    
+    const cleanName = personName ? personName.trim() : `${personType}_${index + 1}`;
+    const readableFileType = getReadableFileType(fileType);
+    
+    return `${readableFileType} - ${cleanName}${extension}`;
+  }
+  
+  const readableFileType = getReadableFileType(fieldName);
+  const companyName = registrationData.organizationName || registrationData.proposedName1 || "Business";
+  return `${readableFileType} - ${companyName}${extension}`;
 }
 
 export async function POST(request: NextRequest) {
   try {
-    console.log("[API] Processing comprehensive form submission with Dropbox storage")
+    console.log("[API] Processing form submission with Google Drive & Sheets storage")
 
-    if (!process.env.DROPBOX_ACCESS_TOKEN) {
-      console.error("[API] DROPBOX_ACCESS_TOKEN environment variable is missing")
+    if (!process.env.GOOGLE_APPS_SCRIPT_URL) {
+      console.error("[API] GOOGLE_APPS_SCRIPT_URL environment variable is missing")
       return NextResponse.json(
         {
           success: false,
-          message: "Server configuration error: Dropbox access token not configured",
-          error: "DROPBOX_ACCESS_TOKEN environment variable is required",
+          message: "Server configuration error: Google Apps Script Web App URL not configured",
+          error: "GOOGLE_APPS_SCRIPT_URL environment variable is required",
         },
         { status: 500 },
       )
     }
 
-    // Import Dropbox services
-    const { createDropboxFolder, uploadFilesToDropbox, createDropboxDocument, getDropboxFolderLink } = await import(
-      "@/lib/dropbox-services"
-    )
-
     const formData = await request.formData()
 
-    const registrationData: FormData = {
-      registrationType: sanitizeInput(formData.get("registrationType") as string),
-      businessName: sanitizeInput(formData.get("businessName") as string),
-      organizationName: sanitizeInput(formData.get("organizationName") as string),
-      email: sanitizeInput(formData.get("email") as string),
-      phoneNumber:
-        sanitizeInput(formData.get("phone") as string) || sanitizeInput(formData.get("phoneNumber") as string),
-      officeAddress:
-        sanitizeInput(formData.get("businessAddress") as string) ||
-        sanitizeInput(formData.get("officeAddress") as string),
+    const registrationData: GoogleRegistrationPayload = {
+      registrationType: sanitizeInput(formData.get("registrationType") as string) as any,
+      proposedName1: sanitizeInput(formData.get("proposedName1") as string),
+      proposedName2: sanitizeInput(formData.get("proposedName2") as string),
+      proposedName3: sanitizeInput(formData.get("proposedName3") as string),
+      businessAddress: sanitizeInput(formData.get("businessAddress") as string) || sanitizeInput(formData.get("officeAddress") as string),
+      email: sanitizeInput(formData.get("email") as string) || sanitizeInput(formData.get("organizationEmail") as string),
+      phoneNumber: sanitizeInput(formData.get("phone") as string) || sanitizeInput(formData.get("phoneNumber") as string) || sanitizeInput(formData.get("organizationPhone") as string),
+      natureOfBusiness: sanitizeInput(formData.get("natureOfBusiness") as string),
+      
+      // Company specific
       totalShares: safeParseInt(formData.get("totalShares") as string),
+      allotmentDetails: sanitizeInput(formData.get("allotmentDetails") as string),
+      
+      // Trustees specific
+      organizationName: sanitizeInput(formData.get("organizationName") as string),
+      organizationEmail: sanitizeInput(formData.get("organizationEmail") as string),
+      organizationPhone: sanitizeInput(formData.get("organizationPhone") as string),
+      officeAddress: sanitizeInput(formData.get("officeAddress") as string),
       keyObjectives: sanitizeInput(formData.get("keyObjectives") as string),
       trusteeTenure: sanitizeInput(formData.get("trusteeTenure") as string),
       sealCustodian: sanitizeInput(formData.get("sealCustodian") as string),
       fundingSources: sanitizeInput(formData.get("fundingSources") as string),
-      // Business Name specific fields with third proposed name
-      proposedName1: sanitizeInput(formData.get("proposedName1") as string),
-      proposedName2: sanitizeInput(formData.get("proposedName2") as string),
-      proposedName3: sanitizeInput(formData.get("proposedName3") as string),
-      natureOfBusiness: sanitizeInput(formData.get("natureOfBusiness") as string),
-      directorName: sanitizeInput(formData.get("directorName") as string),
-      directorNIN: sanitizeInput(formData.get("directorNIN") as string),
-      directorPhone: sanitizeInput(formData.get("directorPhone") as string),
+      
+      files: [] // Initialize flat files list
     }
 
     if (!registrationData.registrationType) {
       return NextResponse.json({ success: false, message: "Registration type is required" }, { status: 400 })
     }
 
+    // Parse dynamic arrays
+    const directorsData = formData.get("directors")
+    if (directorsData) {
+      registrationData.directors = safeJsonParse(directorsData as string) || []
+    }
+
+    const shareholdersData = formData.get("shareholders")
+    if (shareholdersData) {
+      registrationData.shareholders = safeJsonParse(shareholdersData as string) || []
+    }
+
+    const trusteesData = formData.get("trustees")
+    if (trusteesData) {
+      registrationData.trustees = safeJsonParse(trusteesData as string) || []
+    }
+
+    const proprietorsData = formData.get("proprietors")
+    if (proprietorsData) {
+      registrationData.proprietors = safeJsonParse(proprietorsData as string) || []
+    }
+
+    // Determine the Client Name (first person listed)
+    let clientName = ""
+    if (registrationData.registrationType === "bn" && registrationData.proprietors && registrationData.proprietors.length > 0) {
+      clientName = registrationData.proprietors[0].fullName
+    } else if (registrationData.registrationType === "company" && registrationData.directors && registrationData.directors.length > 0) {
+      clientName = registrationData.directors[0].fullName
+    } else if (registrationData.registrationType === "trustees" && registrationData.trustees && registrationData.trustees.length > 0) {
+      clientName = registrationData.trustees[0].fullName
+    }
+    registrationData.clientName = clientName
+
+    // Validate based on Registration Type
     if (registrationData.registrationType === "trustees") {
       if (!registrationData.organizationName || !registrationData.email) {
         return NextResponse.json(
@@ -81,248 +153,104 @@ export async function POST(request: NextRequest) {
           { status: 400 },
         )
       }
-    } else {
-      if (!registrationData.proposedName1 || !registrationData.proposedName2 || !registrationData.proposedName3) {
+      if (!registrationData.trustees || registrationData.trustees.length < 2) {
         return NextResponse.json(
-          {
-            success: false,
-            message: "All three proposed names are required for Business Name and Company Limited registrations",
-          },
-          { status: 400 },
-        )
-      }
-      if (!registrationData.email) {
-        return NextResponse.json({ success: false, message: "Email address is required" }, { status: 400 })
-      }
-    }
-
-    const directorsData = formData.get("directors")
-    if (directorsData) {
-      registrationData.directors = safeJsonParse(directorsData as string) || []
-      console.log("[API] Directors data parsed:", registrationData.directors?.length || 0, "directors")
-    }
-
-    const shareholdersData = formData.get("shareholders")
-    if (shareholdersData) {
-      registrationData.shareholders = safeJsonParse(shareholdersData as string) || []
-      console.log("[API] Shareholders data parsed:", registrationData.shareholders?.length || 0, "shareholders")
-    }
-
-    const trusteesData = formData.get("trustees")
-    if (trusteesData) {
-      registrationData.trustees = safeJsonParse(trusteesData as string) || []
-      console.log("[API] Trustees data parsed:", registrationData.trustees?.length || 0, "trustees")
-    }
-
-    if (registrationData.registrationType === "bn") {
-      if (!registrationData.directorName || !registrationData.directorNIN) {
-        return NextResponse.json(
-          { success: false, message: "Director name and NIN are required for Business Name registration" },
+          { success: false, message: "At least two (2) trustees are required for Incorporated Trustees" },
           { status: 400 },
         )
       }
     } else if (registrationData.registrationType === "company") {
+      if (!registrationData.proposedName1 || !registrationData.proposedName2 || !registrationData.proposedName3) {
+        return NextResponse.json(
+          { success: false, message: "All three proposed names are required for Company Limited" },
+          { status: 400 },
+        )
+      }
       if (!registrationData.directors || registrationData.directors.length === 0) {
         return NextResponse.json(
-          { success: false, message: "At least one director is required for Company Limited registration" },
+          { success: false, message: "At least one director is required for Company Limited" },
           { status: 400 },
         )
       }
       if (!registrationData.shareholders || registrationData.shareholders.length === 0) {
         return NextResponse.json(
-          { success: false, message: "At least one shareholder is required for Company Limited registration" },
+          { success: false, message: "At least one shareholder is required for Company Limited" },
           { status: 400 },
         )
       }
       if (!registrationData.totalShares || registrationData.totalShares <= 0) {
         return NextResponse.json(
-          { success: false, message: "Total shares must be greater than 0 for Company Limited registration" },
+          { success: false, message: "Total shares must be greater than 0 for Company Limited" },
           { status: 400 },
         )
       }
-    } else if (registrationData.registrationType === "trustees") {
-      if (!registrationData.trustees || registrationData.trustees.length === 0) {
+    } else if (registrationData.registrationType === "bn") {
+      if (!registrationData.proposedName1 || !registrationData.proposedName2 || !registrationData.proposedName3) {
         return NextResponse.json(
-          { success: false, message: "At least one trustee is required for Incorporated Trustees registration" },
+          { success: false, message: "All three proposed names are required for Business Name" },
+          { status: 400 },
+        )
+      }
+      if (!registrationData.proprietors || registrationData.proprietors.length === 0) {
+        return NextResponse.json(
+          { success: false, message: "At least one proprietor is required for Business Name" },
           { status: 400 },
         )
       }
     }
 
-    console.log("[API] Validated registration data:", {
-      type: registrationData.registrationType,
-      proposedNames: [registrationData.proposedName1, registrationData.proposedName2, registrationData.proposedName3],
-      organizationName: registrationData.organizationName,
-      directorsCount: registrationData.directors?.length || 0,
-      shareholdersCount: registrationData.shareholders?.length || 0,
-      trusteesCount: registrationData.trustees?.length || 0,
+    // Process and encode files to Base64
+    const fileList: GoogleFilePayload[] = []
+
+    for (const [key, value] of formData.entries()) {
+      if (value instanceof File && value.size > 0) {
+        const buffer = Buffer.from(await value.arrayBuffer())
+        const base64 = buffer.toString("base64")
+        
+        const cleanName = getCleanFileName(key, value.name, registrationData)
+        fileList.push({
+          fileName: cleanName,
+          mimeType: value.type,
+          base64: base64
+        })
+        console.log(`[API] Encoded and renamed file: ${key} -> ${cleanName}`)
+      }
+    }
+
+    registrationData.files = fileList
+    console.log(`[API] Total encoded files for submission: ${fileList.length}`)
+
+    // Submit payload to Google Apps Script
+    console.log("[API] Calling Google Apps Script...")
+    const result = await submitToGoogleAppsScript(registrationData)
+    console.log("[API] Google Apps Script Response:", result)
+
+    if (!result.success) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Google Apps Script Web App failed to process submission",
+          error: result.error || "Unknown Apps Script error"
+        },
+        { status: 500 }
+      )
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: result.message || "Registration requirements submitted successfully to Google Drive & Sheets!",
+      folderUrl: result.folderUrl
     })
 
-    const files: UploadedFile[] = []
-    const fileFields = [
-      "cac2",
-      "cac1_5",
-      "cac7",
-      "idCard",
-      "passportPhotograph",
-      "sampleSignature",
-      "memart",
-      "boardResolution",
-      "constitutionDocument",
-      "passportPhoto",
-    ]
-
-    // Handle regular files and BN specific files
-    for (const fieldName of fileFields) {
-      const fileEntries = formData.getAll(fieldName)
-      for (const fileEntry of fileEntries) {
-        if (fileEntry instanceof File && fileEntry.size > 0) {
-          const buffer = Buffer.from(await fileEntry.arrayBuffer())
-          files.push({
-            fieldName,
-            fileName: sanitizeInput(fileEntry.name),
-            buffer,
-            mimeType: fileEntry.type,
-          })
-          console.log(`[API] Added regular file: ${fieldName} -> ${fileEntry.name}`)
-        }
-      }
-    }
-
-    // Handle person-specific files (directors, shareholders, trustees)
-    for (const [key, value] of formData.entries()) {
-      if (key.startsWith("director_") || key.startsWith("shareholder_") || key.startsWith("trustee_")) {
-        if (value instanceof File && value.size > 0) {
-          const buffer = Buffer.from(await value.arrayBuffer())
-          files.push({
-            fieldName: key,
-            fileName: sanitizeInput(value.name),
-            buffer,
-            mimeType: value.type,
-          })
-          console.log(`[API] Added person file: ${key} -> ${value.name}`)
-        }
-      }
-    }
-
-    console.log(`[API] Total files processed: ${files.length}`)
-
-    const businessName =
-      registrationData.organizationName ||
-      registrationData.proposedName1 ||
-      registrationData.businessName ||
-      "Unknown Business"
-    const registrationType = registrationData.registrationType.toUpperCase()
-    const timestamp = new Date().toISOString().split("T")[0]
-    const folderName = `${businessName} - ${registrationType} - ${timestamp}`
-
-    console.log(`[API] Creating Dropbox folder: ${folderName}`)
-
-    try {
-      // Create Dropbox folder
-      const folderPath = await createDropboxFolder(folderName, "/BIZDOC Applications")
-      console.log(`[API] Dropbox folder created: ${folderPath}`)
-
-      // Upload files to Dropbox with enhanced organization
-      let uploadedFiles: Array<{ fileName: string; filePath: string; shareUrl?: string }> = []
-      if (files.length > 0) {
-        console.log(`[API] Uploading ${files.length} files to Dropbox...`)
-        uploadedFiles = await uploadFilesToDropbox(files, folderPath, registrationData)
-        console.log(`[API] Successfully uploaded ${uploadedFiles.length} files`)
-      }
-
-      // Create comprehensive document with form data
-      console.log("[API] Creating comprehensive registration document...")
-      const { filePath: docPath, shareUrl: docLink } = await createDropboxDocument(registrationData, folderPath)
-      console.log(`[API] Document created: ${docPath}`)
-
-      // Get folder link for easy access
-      const folderLink = await getDropboxFolderLink(folderPath)
-      console.log(`[API] Folder link generated: ${folderLink}`)
-
-      const response = {
-        success: true,
-        message: `${registrationType} registration submitted successfully to Dropbox!`,
-        data: {
-          registrationType: registrationData.registrationType,
-          businessName: businessName,
-          folderPath,
-          folderUrl: folderLink,
-          documentPath: docPath,
-          documentUrl: docLink,
-          uploadedFiles: uploadedFiles.map((file) => ({
-            fileName: file.fileName,
-            filePath: file.filePath,
-            shareUrl: file.shareUrl,
-          })),
-          summary: {
-            totalFiles: uploadedFiles.length,
-            directorsCount: registrationData.directors?.length || 0,
-            shareholdersCount: registrationData.shareholders?.length || 0,
-            trusteesCount: registrationData.trustees?.length || 0,
-            submissionDate: new Date().toISOString(),
-          },
-        },
-      }
-
-      console.log("[API] Form submission completed successfully")
-      return NextResponse.json(response)
-    } catch (dropboxError: any) {
-      console.error("[API] Dropbox operation failed:", dropboxError.message)
-
-      if (dropboxError.message.includes("authentication failed") || dropboxError.message.includes("access token")) {
-        return NextResponse.json(
-          {
-            success: false,
-            message: "Dropbox authentication error. Please contact support.",
-            error:
-              "The Dropbox access token is invalid, expired, or lacks sufficient permissions. Please regenerate your Dropbox access token with 'Full Dropbox' access.",
-            details: {
-              issue: "Authentication",
-              solution: "Contact administrator to update Dropbox credentials",
-            },
-          },
-          { status: 401 },
-        )
-      }
-
-      if (dropboxError.message.includes("access forbidden")) {
-        return NextResponse.json(
-          {
-            success: false,
-            message: "Dropbox access denied. Please contact support.",
-            error: "The application does not have permission to access the required Dropbox folders.",
-            details: {
-              issue: "Permissions",
-              solution: "Contact administrator to update Dropbox app permissions",
-            },
-          },
-          { status: 403 },
-        )
-      }
-
-      // Re-throw for general error handling
-      throw dropboxError
-    }
   } catch (error: any) {
-    console.error("[API] Form submission error:", error.message)
-
-    const errorResponse = {
-      success: false,
-      message: "Failed to submit form. Please try again.",
-      error: error.message || "Unknown error occurred",
-      timestamp: new Date().toISOString(),
-    }
-
-    // Add specific guidance based on error type
-    if (error.message.includes("DROPBOX_ACCESS_TOKEN")) {
-      errorResponse.message = "Server configuration error. Please contact support."
-    } else if (error.message.includes("authentication") || error.message.includes("401")) {
-      errorResponse.message = "Authentication error. Please contact support to resolve Dropbox access issues."
-    } else if (error.message.includes("network") || error.message.includes("fetch")) {
-      errorResponse.message = "Network error. Please check your connection and try again."
-    }
-
-    return NextResponse.json(errorResponse, { status: 500 })
+    console.error("[API] Comprehensive submission error:", error.message)
+    return NextResponse.json(
+      {
+        success: false,
+        message: "Failed to submit form. Please check configuration and try again.",
+        error: error.message || "Unknown error occurred"
+      },
+      { status: 500 }
+    )
   }
 }
