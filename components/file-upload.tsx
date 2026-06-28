@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState, useCallback } from "react"
+import { useState, useCallback, useRef } from "react"
 import { Upload, X, File } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
@@ -18,6 +18,7 @@ interface FileUploadProps {
 export function FileUpload({ label, accept = "*/*", multiple = false, onFilesChange, className }: FileUploadProps) {
   const [files, setFiles] = useState<File[]>([])
   const [isDragOver, setIsDragOver] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handleFiles = useCallback(
     (newFiles: FileList | null) => {
@@ -67,12 +68,12 @@ export function FileUpload({ label, accept = "*/*", multiple = false, onFilesCha
         onDrop={handleDrop}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
-        onClick={() => document.getElementById(`file-${label}`)?.click()}
+        onClick={() => fileInputRef.current?.click()}
       >
         <Upload className="mx-auto h-8 w-8 text-muted-foreground mb-2" />
         <p className="text-sm text-muted-foreground">Drag and drop files here, or click to select</p>
         <input
-          id={`file-${label}`}
+          ref={fileInputRef}
           type="file"
           accept={accept}
           multiple={multiple}

@@ -914,6 +914,7 @@ export default function BusinessRegistrationForm() {
                     type="director"
                     persons={formData.directors}
                     onPersonsChange={(directors) => updateFormData("directors", directors)}
+                    hidePassport={formData.registrationType === "company"}
                   />
 
                   <DynamicPersonForm
@@ -922,6 +923,8 @@ export default function BusinessRegistrationForm() {
                     persons={formData.shareholders}
                     onPersonsChange={(shareholders) => updateFormData("shareholders", shareholders)}
                     totalShares={formData.totalShares}
+                    hidePassport={formData.registrationType === "company"}
+                    directors={formData.directors}
                   />
 
                   <div className="flex flex-col sm:flex-row justify-between gap-3 sm:gap-0 pt-4 sm:pt-6">

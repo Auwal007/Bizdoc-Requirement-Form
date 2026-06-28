@@ -29,9 +29,11 @@ interface DynamicPersonFormProps {
   persons: PersonData[]
   onPersonsChange: (persons: PersonData[]) => void
   totalShares?: number
+  hidePassport?: boolean
+  directors?: any[]
 }
 
-export function DynamicPersonForm({ title, type, persons, onPersonsChange, totalShares }: DynamicPersonFormProps) {
+export function DynamicPersonForm({ title, type, persons, onPersonsChange, totalShares, hidePassport, directors }: DynamicPersonFormProps) {
   const addPerson = () => {
     const newPerson: PersonData = {
       id: Date.now().toString(),
@@ -115,6 +117,41 @@ export function DynamicPersonForm({ title, type, persons, onPersonsChange, total
             </div>
           </CardHeader>
           <CardContent className="space-y-4 sm:space-y-6">
+            {type === "shareholder" && directors && directors.length > 0 && (
+              <div className="bg-secondary/50 p-4 rounded-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-sm border border-border">
+                <span className="text-muted-foreground font-medium">Is this shareholder also a director?</span>
+                <select
+                  onChange={(e) => {
+                    const dirIndex = parseInt(e.target.value, 10);
+                    if (!isNaN(dirIndex) && directors[dirIndex]) {
+                      const dir = directors[dirIndex];
+                      updatePerson(person.id, "fullName", dir.fullName);
+                      updatePerson(person.id, "email", dir.email);
+                      updatePerson(person.id, "phone", dir.phone);
+                      updatePerson(person.id, "nin", dir.nin);
+                      updatePerson(person.id, "residentialAddress", dir.residentialAddress);
+                      if (dir.files) {
+                        updatePerson(person.id, "files", {
+                          idCard: dir.files.idCard ? [...dir.files.idCard] : [],
+                          passport: dir.files.passport ? [...dir.files.passport] : [],
+                          signature: dir.files.signature ? [...dir.files.signature] : []
+                        });
+                      }
+                    }
+                    e.target.value = ""; // Reset dropdown
+                  }}
+                  className="bg-background border border-input rounded-md px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-primary font-medium cursor-pointer max-w-full"
+                  defaultValue=""
+                >
+                  <option value="" disabled>Select director to copy details...</option>
+                  {directors.map((dir, i) => (
+                    <option key={dir.id || i} value={i}>
+                      {dir.fullName || `Director ${i + 1}`}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
               <div>
                 <label className="form-label">Full Name</label>
@@ -187,7 +224,7 @@ export function DynamicPersonForm({ title, type, persons, onPersonsChange, total
                   placeholder="Enter residential address"
                 />
               </div>
-              {(type === "director" || type === "trustee") && (
+              {(type === "director" || type === "trustee" || type === "proprietor") && (
                 <div>
                   <label className="form-label">Date of Birth</label>
                   <Input
@@ -219,11 +256,13 @@ export function DynamicPersonForm({ title, type, persons, onPersonsChange, total
                 accept="image/*,.pdf"
                 onFilesChange={(files) => updatePersonFiles(person.id, "idCard", files)}
               />
-              <FileUpload
-                label="Passport Photograph"
-                accept="image/*"
-                onFilesChange={(files) => updatePersonFiles(person.id, "passport", files)}
-              />
+              {!hidePassport && (
+                <FileUpload
+                  label="Passport Photograph"
+                  accept="image/*"
+                  onFilesChange={(files) => updatePersonFiles(person.id, "passport", files)}
+                />
+              )}
               <FileUpload
                 label="Sample Signature"
                 accept="image/*,.pdf"
