@@ -69,7 +69,7 @@ export default function BusinessRegistrationForm() {
     fundingSources: "",
     trustees: [],
   })
-  const [submissionResult, setSubmissionResult] = useState(null)
+  const [submissionResult, setSubmissionResult] = useState<any>(null)
 
   const getSteps = () => {
     switch (formData.registrationType) {
@@ -302,41 +302,10 @@ export default function BusinessRegistrationForm() {
       const result = await response.json()
       console.log("[v0] API Success response:", result)
 
+      setSubmissionResult(result)
+      setShowSuccessModal(true)
       toast.success("Form submitted successfully!")
 
-      // Show success message with links
-      if (result.folderUrl) {
-        const message = `Your registration has been submitted successfully! View your Google Drive folder: ${result.folderUrl}`
-        toast.success(message, { duration: 10000 })
-      }
-
-      // Reset form
-      setCurrentStep(0)
-      setFormData({
-        registrationType: "",
-        businessNameType: "sole",
-        proposedName1: "",
-        proposedName2: "",
-        proposedName3: "",
-        businessAddress: "",
-        email: "",
-        phone: "",
-        natureOfBusiness: "",
-        proprietors: [],
-        directors: [],
-        shareholders: [],
-        totalShares: 0,
-        allotmentDetails: "",
-        organizationName: "",
-        organizationEmail: "",
-        organizationPhone: "",
-        officeAddress: "",
-        keyObjectives: "",
-        trusteeTenure: "",
-        sealCustodian: "",
-        fundingSources: "",
-        trustees: [],
-      })
     } catch (error) {
       console.error("[v0] Form submission error:", error)
       toast.error(error instanceof Error ? error.message : "Failed to submit form. Please try again.")
@@ -1513,12 +1482,58 @@ export default function BusinessRegistrationForm() {
                     If you have any questions, feel free to contact our support team.
                   </p>
                 </div>
+
+                {submissionResult?.folderUrl && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-center">
+                    <p className="text-blue-800 font-bold text-sm mb-2">📂 Your Google Drive Folder</p>
+                    <p className="text-blue-700 text-xs mb-3">
+                      Your requirements have been successfully captured! You can view and manage your uploaded files here:
+                    </p>
+                    <a
+                      href={submissionResult.folderUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center justify-center w-full px-4 py-2.5 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg"
+                    >
+                      Open Google Drive Folder
+                    </a>
+                  </div>
+                )}
               </div>
 
               {/* Close button */}
               <div className="mt-6">
                 <Button
-                  onClick={() => setShowSuccessModal(false)}
+                  onClick={() => {
+                    setShowSuccessModal(false)
+                    setCurrentStep(0)
+                    setFormData({
+                      registrationType: "",
+                      businessNameType: "sole",
+                      proposedName1: "",
+                      proposedName2: "",
+                      proposedName3: "",
+                      businessAddress: "",
+                      email: "",
+                      phone: "",
+                      natureOfBusiness: "",
+                      proprietors: [],
+                      directors: [],
+                      shareholders: [],
+                      totalShares: 0,
+                      allotmentDetails: "",
+                      organizationName: "",
+                      organizationEmail: "",
+                      organizationPhone: "",
+                      officeAddress: "",
+                      keyObjectives: "",
+                      trusteeTenure: "",
+                      sealCustodian: "",
+                      fundingSources: "",
+                      trustees: [],
+                    })
+                    setSubmissionResult(null)
+                  }}
                   className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-medium py-3 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl"
                 >
                   Continue
