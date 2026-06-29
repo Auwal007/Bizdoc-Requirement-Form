@@ -2089,46 +2089,9 @@ export default function BusinessRegistrationForm() {
             </div>
 
             {/* Content */}
-            <div className="p-6 text-center">
-              <div className="space-y-4">
-                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                  <p className="text-green-800 font-medium mb-2">✅ Application Received</p>
-                  <p className="text-green-700 text-sm">
-                    We have successfully received your business registration application and all required documents.
-                  </p>
-                </div>
-
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <p className="text-blue-800 font-medium mb-2">⏰ What's Next?</p>
-                  <p className="text-blue-700 text-sm">
-                    Our team will review your submission and contact you within 2-3 business days to proceed with your
-                    registration.
-                  </p>
-                </div>
-
-                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-                  <p className="text-amber-800 font-medium mb-2">📞 Need Help?</p>
-                  <p className="text-amber-700 text-sm">
-                    If you have any questions, feel free to contact our support team.
-                  </p>
-                </div>
-
-                {submissionResult?.folderUrl && (
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-center">
-                    <p className="text-blue-800 font-bold text-sm mb-2">📂 Your Google Drive Folder</p>
-                    <p className="text-blue-700 text-xs mb-3">
-                      Your requirements have been successfully captured! You can view and manage your uploaded files here:
-                    </p>
-                    <a
-                      href={submissionResult.folderUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center justify-center w-full px-4 py-2.5 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg"
-                    >
-                      Open Google Drive Folder
-                    </a>
-                  </div>
-                )}
+            <div className="p-8 text-center">
+              <div className="bg-green-50 border border-green-200 rounded-xl p-6 mb-6">
+                <p className="text-green-800 font-semibold text-lg">We have received your application.</p>
               </div>
 
               {/* Close button */}
