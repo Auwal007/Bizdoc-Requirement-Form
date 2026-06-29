@@ -299,14 +299,13 @@ export function DynamicPersonForm({ title, type, persons, onPersonsChange, total
                 )}
                 {type === "shareholder" && (
                   <div>
-                    <label className="form-label">Share Allocation * {totalShares && `(out of ${totalShares})`}</label>
+                    <label className="form-label">Share Allocation</label>
                     <Input
                       type="number"
                       className="form-input"
-                      value={person.shareAllocation}
+                      value={person.shareAllocation || ""}
                       onChange={(e) => updatePerson(person.id, "shareAllocation", Number.parseInt(e.target.value) || 0)}
                       placeholder="Enter number of shares"
-                      max={totalShares}
                     />
                   </div>
                 )}

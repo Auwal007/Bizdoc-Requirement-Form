@@ -271,16 +271,7 @@ export default function BusinessRegistrationForm() {
           toast.error("Business Address: State is required")
           return false
         }
-        if (formData.registrationType === "company") {
-          if (!formData.totalShares || formData.totalShares <= 0) {
-            toast.error("Total Share Capital must be greater than 0")
-            return false
-          }
-          if (!formData.allotmentDetails?.trim()) {
-            toast.error("Allotment Details are required")
-            return false
-          }
-        }
+
       }
       return true
     }
@@ -432,10 +423,7 @@ export default function BusinessRegistrationForm() {
             toast.error(`${label}: NIN Number must be exactly 11 digits`)
             return false
           }
-          if (!s.shareAllocation || s.shareAllocation <= 0) {
-            toast.error(`${label}: Share Allocation must be greater than 0`)
-            return false
-          }
+
           if (!s.residentialAddress_building?.trim()) {
             toast.error(`${label}: Residential Address (Building/Plot No.) is required`)
             return false
@@ -1434,39 +1422,6 @@ export default function BusinessRegistrationForm() {
                   </Card>
                 )}
 
-                {/* Company Share Capital Details Section */}
-                {formData.registrationType === "company" && (
-                  <Card className="card-enhanced">
-                    <CardHeader>
-                      <CardTitle className="section-title">Share Capital Details</CardTitle>
-                    </CardHeader>
-                    <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-                      <div>
-                        <label className="form-label">Total Share Capital (Shares) *</label>
-                        <input
-                          type="number"
-                          className="form-input"
-                          value={formData.totalShares || ""}
-                          onChange={(e) => updateFormData("totalShares", parseInt(e.target.value) || 0)}
-                          placeholder="e.g. 1000000"
-                          min="1"
-                          required
-                        />
-                      </div>
-                      <div>
-                        <label className="form-label">Allotment Details *</label>
-                        <input
-                          type="text"
-                          className="form-input"
-                          value={formData.allotmentDetails || ""}
-                          onChange={(e) => updateFormData("allotmentDetails", e.target.value)}
-                          placeholder="e.g. 1,000,000 Ordinary Shares of N1.00 each"
-                          required
-                        />
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
 
                 {/* Navigation Buttons */}
                 <Card className="card-enhanced">

@@ -123,6 +123,19 @@ export async function POST(request: NextRequest) {
     if (shareholdersData) {
       registrationData.shareholders = safeJsonParse(shareholdersData as string) || []
     }
+    if (registrationData.registrationType === "company") {
+      let sumShares = 0
+      if (Array.isArray(registrationData.shareholders)) {
+        sumShares = registrationData.shareholders.reduce(
+          (sum: number, sh: any) => sum + (safeParseInt(sh.shareAllocation) || 0),
+          0
+        )
+      }
+      registrationData.totalShares = sumShares > 0 ? sumShares : 1000000
+      if (!registrationData.allotmentDetails) {
+        registrationData.allotmentDetails = `${registrationData.totalShares.toLocaleString()} Ordinary Shares of N1.00 each`
+      }
+    }
 
     const trusteesData = formData.get("trustees")
     if (trusteesData) {
@@ -178,12 +191,7 @@ export async function POST(request: NextRequest) {
           { status: 400 },
         )
       }
-      if (!registrationData.totalShares || registrationData.totalShares <= 0) {
-        return NextResponse.json(
-          { success: false, message: "Total shares must be greater than 0 for Company Limited" },
-          { status: 400 },
-        )
-      }
+
     } else if (registrationData.registrationType === "bn") {
       if (!registrationData.proposedName1 || !registrationData.proposedName2 || !registrationData.proposedName3) {
         return NextResponse.json(
