@@ -2,126 +2,375 @@
 @tailwind components;
 @tailwind utilities;
 
-@import "tw-animate-css";
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+/* ============================================
+   BIZDOC BRAND DESIGN SYSTEM
+   Forest Green · Gold · Milk · Inter
+   Built to Last.
+   ============================================ */
 
 :root {
-  /* Updated to use brand green #2da42c and white color scheme */
-  --background: 0 0% 100%; /* #ffffff - pure white background */
-  --foreground: 149 58% 21%; /* #14532d - dark green for text */
-  --card: 0 0% 96%; /* #f5f5f5 - light gray for card backgrounds */
-  --card-foreground: 149 58% 21%; /* #14532d - dark green */
-  --popover: 0 0% 100%; /* #ffffff */
-  --popover-foreground: 149 58% 21%; /* #14532d - dark green */
-  --primary: 120 60% 40%; /* #2da42c - brand green */
-  --primary-foreground: 0 0% 100%; /* #ffffff */
-  --secondary: 120 80% 97%; /* #f0fdf4 - very light green */
-  --secondary-foreground: 149 74% 20%; /* #166534 - medium green */
-  --muted: 0 0% 96%; /* #f5f5f5 - light gray */
-  --muted-foreground: 215 16% 47%; /* #6b7280 - medium gray */
-  --accent: 120 80% 97%; /* #f0fdf4 - very light green */
-  --accent-foreground: 149 74% 20%; /* #166534 - medium green */
-  --destructive: 0 62% 51%; /* #dc2626 */
-  --destructive-foreground: 0 0% 100%; /* #ffffff */
-  --border: 220 13% 91%; /* #e5e7eb - light gray border */
-  --input: 0 0% 100%; /* #ffffff - white input background */
-  --ring: 120 60% 40%; /* brand green for focus ring */
-  --radius: 0.5rem;
-}
+  /* Brand Colours */
+  --bizdoc-green:     #1B4D3E;   /* Forest Green — Primary */
+  --bizdoc-gold:      #B48C4C;   /* Gold — Highlight */
+  --bizdoc-milk:      #FFFBEB;   /* Milk — Background */
+  --bizdoc-charcoal:  #1A1A1A;   /* Charcoal — Body Text */
+  --bizdoc-muted:     #6B7280;   /* Muted — Captions */
+  --bizdoc-hairline:  #E7E5E4;   /* Hairline — Border */
+  --bizdoc-surface:   #F5F0E0;   /* Slightly deeper milk for cards */
+  --bizdoc-green-10:  rgba(27,77,62,0.08);  /* Tint for hover states */
+  --bizdoc-green-20:  rgba(27,77,62,0.15);  /* Tint for active states */
+  --bizdoc-gold-10:   rgba(180,140,76,0.10);
 
-.dark {
-  --background: 240 10% 3.9%;
-  --foreground: 0 0% 98%;
-  --card: 240 10% 3.9%;
-  --card-foreground: 0 0% 98%;
-  --popover: 240 10% 3.9%;
-  --popover-foreground: 0 0% 98%;
-  --primary: 0 0% 98%;
-  --primary-foreground: 240 5.9% 10%;
-  --secondary: 240 3.7% 15.9%;
-  --secondary-foreground: 0 0% 98%;
-  --muted: 240 3.7% 15.9%;
-  --muted-foreground: 240 5% 64.9%;
-  --accent: 240 3.7% 15.9%;
-  --accent-foreground: 0 0% 98%;
-  --destructive: 0 62.8% 30.6%;
-  --destructive-foreground: 0 0% 98%;
-  --border: 240 3.7% 15.9%;
-  --input: 240 3.7% 15.9%;
-  --ring: 240 4.9% 83.9%;
+  /* Shadcn/Tailwind token mapping */
+  --background: 48 100% 97%;            /* Milk #FFFBEB */
+  --foreground: 0 0% 10%;               /* Charcoal #1A1A1A */
+  --card: 43 67% 93%;                   /* Surface #F5F0E0 */
+  --card-foreground: 0 0% 10%;
+  --popover: 48 100% 97%;
+  --popover-foreground: 0 0% 10%;
+  --primary: 160 48% 21%;              /* Forest Green #1B4D3E */
+  --primary-foreground: 48 100% 97%;   /* Milk on Green */
+  --secondary: 160 48% 95%;            /* Light green tint */
+  --secondary-foreground: 160 48% 21%;
+  --muted: 43 40% 93%;
+  --muted-foreground: 220 9% 46%;      /* #6B7280 */
+  --accent: 38 46% 50%;                /* Gold #B48C4C */
+  --accent-foreground: 48 100% 97%;
+  --destructive: 0 72% 51%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 30 7% 89%;                 /* Hairline #E7E5E4 */
+  --input: 0 0% 100%;
+  --ring: 160 48% 21%;
+  --radius: 0.375rem;
 }
 
 @layer base {
   * {
     border-color: hsl(var(--border));
     outline-color: hsl(var(--ring));
+    box-sizing: border-box;
   }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
   body {
-    background-color: hsl(var(--background));
-    color: hsl(var(--foreground));
-    font-family: system-ui, sans-serif;
+    background-color: var(--bizdoc-milk);
+    color: var(--bizdoc-charcoal);
+    font-family: 'Inter', system-ui, sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Inter', system-ui, sans-serif;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    color: var(--bizdoc-green);
+  }
+
+  input, textarea, select {
+    font-family: 'Inter', system-ui, sans-serif;
   }
 }
 
-/* Enhanced component styles for modern professional appearance */
+/* ============================================
+   COMPONENT LAYER
+   ============================================ */
 @layer components {
-  .form-section {
-    background-color: hsl(var(--card));
-    border: 1px solid hsl(var(--border));
-    border-radius: 0.5rem;
-    padding: 1.5rem;
-    box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+
+  /* ── Page Shell ─────────────────────────── */
+  .bizdoc-page {
+    background-color: var(--bizdoc-milk);
+    min-height: 100vh;
   }
 
-  .section-title {
-    font-size: 1.25rem;
+  /* ── Header / Nav ────────────────────────── */
+  .bizdoc-header {
+    background-color: var(--bizdoc-green);
+    border-bottom: 2px solid var(--bizdoc-gold);
+    padding: 16px 32px;
+  }
+
+  .bizdoc-wordmark {
+    font-family: 'Inter', sans-serif;
     font-weight: 700;
-    color: hsl(var(--primary));
+    font-size: 1.25rem;
+    letter-spacing: -0.03em;
+    color: var(--bizdoc-milk);
+  }
+
+  .bizdoc-wordmark span {
+    color: var(--bizdoc-gold);
+  }
+
+  .bizdoc-tagline {
+    font-size: 0.75rem;
+    font-weight: 400;
+    color: rgba(255, 251, 235, 0.65);
+    letter-spacing: 0.01em;
+  }
+
+  /* ── Progress Tracker ────────────────────── */
+  .step-active {
+    background-color: var(--bizdoc-green);
+    color: var(--bizdoc-milk);
+    border: 2px solid var(--bizdoc-green);
+    font-weight: 600;
+  }
+
+  .step-done {
+    background-color: var(--bizdoc-gold);
+    border-color: var(--bizdoc-gold);
+    color: var(--bizdoc-milk);
+  }
+
+  .step-pending {
+    background-color: transparent;
+    border: 2px solid var(--bizdoc-hairline);
+    color: var(--bizdoc-muted);
+  }
+
+  .step-line {
+    height: 2px;
+    background-color: var(--bizdoc-hairline);
+    flex: 1;
+  }
+
+  .step-line-done {
+    background-color: var(--bizdoc-gold);
+  }
+
+  /* ── Cards ───────────────────────────────── */
+  .card-enhanced {
+    background-color: #ffffff;
+    border: 1px solid var(--bizdoc-hairline);
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(27, 77, 62, 0.06), 0 1px 2px rgba(0,0,0,0.04);
+    transition: box-shadow 0.2s ease;
+  }
+
+  .card-enhanced:hover {
+    box-shadow: 0 4px 12px rgba(27, 77, 62, 0.10);
+  }
+
+  /* ── Section titles ──────────────────────── */
+  .section-title {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--bizdoc-green);
     margin-bottom: 1rem;
+    letter-spacing: -0.02em;
+  }
+
+  .form-section {
+    background-color: #ffffff;
+    border: 1px solid var(--bizdoc-hairline);
+    border-radius: 8px;
+    padding: 24px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    margin-bottom: 16px;
+  }
+
+  /* ── Inputs ──────────────────────────────── */
+  .form-label {
+    display: block;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--bizdoc-muted);
+    margin-bottom: 6px;
+    letter-spacing: 0.01em;
   }
 
   .form-input {
     width: 100%;
-    padding: 0.75rem 1rem;
-    border: 1px solid hsl(var(--border));
-    border-radius: 0.5rem;
-    background-color: hsl(var(--input));
-    color: hsl(var(--foreground));
-    transition: all 0.2s;
+    padding: 10px 14px;
+    border: 1.5px solid var(--bizdoc-hairline);
+    border-radius: 6px;
+    background-color: #ffffff;
+    color: var(--bizdoc-charcoal);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.9375rem;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .form-input::placeholder {
+    color: #C4C4C4;
   }
 
   .form-input:focus {
     outline: none;
-    box-shadow: 0 0 0 2px hsl(var(--ring) / 0.5);
-    border-color: hsl(var(--primary));
+    border-color: var(--bizdoc-green);
+    box-shadow: 0 0 0 3px var(--bizdoc-green-10);
   }
 
-  .form-label {
-    display: block;
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: hsl(var(--muted-foreground));
-    margin-bottom: 0.5rem;
-  }
-
+  /* ── Buttons ─────────────────────────────── */
   .submit-button {
-    background-color: hsl(var(--primary));
-    color: hsl(var(--primary-foreground));
-    font-weight: 700;
-    padding: 0.75rem 2rem;
-    border-radius: 0.5rem;
-    transition: all 0.2s;
-    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+    background-color: var(--bizdoc-green);
+    color: var(--bizdoc-milk);
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 0.9375rem;
+    padding: 12px 28px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.15s ease, box-shadow 0.15s ease, transform 0.1s ease;
+    box-shadow: 0 2px 8px rgba(27, 77, 62, 0.25);
+    letter-spacing: -0.01em;
   }
 
   .submit-button:hover {
-    background-color: hsl(var(--primary) / 0.9);
-    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+    background-color: #15382c;
+    box-shadow: 0 4px 16px rgba(27, 77, 62, 0.30);
+    transform: translateY(-1px);
   }
 
-  .card-enhanced {
-    background-color: hsl(var(--card));
-    border: 1px solid hsl(var(--border));
-    border-radius: 0.5rem;
-    box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  .submit-button:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 4px rgba(27, 77, 62, 0.25);
   }
+
+  .submit-button:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  /* Gold accent button */
+  .btn-gold {
+    background-color: var(--bizdoc-gold);
+    color: #ffffff;
+    font-weight: 600;
+    padding: 10px 24px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .btn-gold:hover {
+    background-color: #9a7640;
+    box-shadow: 0 4px 12px rgba(180, 140, 76, 0.35);
+  }
+
+  /* Ghost/outline */
+  .btn-outline {
+    background-color: transparent;
+    border: 1.5px solid var(--bizdoc-hairline);
+    color: var(--bizdoc-charcoal);
+    font-weight: 500;
+    padding: 10px 24px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .btn-outline:hover {
+    border-color: var(--bizdoc-green);
+    color: var(--bizdoc-green);
+    background-color: var(--bizdoc-green-10);
+  }
+
+  /* ── Registration Type Cards ─────────────── */
+  .reg-type-card {
+    position: relative;
+    cursor: pointer;
+    border: 2px solid var(--bizdoc-hairline);
+    border-radius: 8px;
+    padding: 24px;
+    background-color: #ffffff;
+    transition: all 0.2s ease;
+  }
+
+  .reg-type-card:hover {
+    border-color: var(--bizdoc-green);
+    box-shadow: 0 4px 16px rgba(27, 77, 62, 0.10);
+    transform: translateY(-2px);
+  }
+
+  .reg-type-card.selected {
+    border-color: var(--bizdoc-green);
+    background-color: var(--bizdoc-green-10);
+    box-shadow: 0 0 0 4px var(--bizdoc-green-10);
+  }
+
+  .reg-type-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 8px;
+    background-color: var(--bizdoc-green-10);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 16px;
+    color: var(--bizdoc-green);
+  }
+
+  .reg-type-card.selected .reg-type-icon {
+    background-color: var(--bizdoc-green);
+    color: var(--bizdoc-milk);
+  }
+
+  /* ── Gold accent divider ─────────────────── */
+  .gold-divider {
+    width: 40px;
+    height: 2px;
+    background-color: var(--bizdoc-gold);
+    border-radius: 2px;
+    margin: 0 auto 16px;
+  }
+
+  /* ── Footer tagline ──────────────────────── */
+  .bizdoc-footer-tag {
+    font-size: 0.75rem;
+    color: var(--bizdoc-muted);
+    text-align: center;
+    letter-spacing: 0.03em;
+    padding: 24px 0;
+  }
+
+  /* ── Help / info badge ───────────────────── */
+  .help-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background-color: var(--bizdoc-green-10);
+    color: var(--bizdoc-green);
+    font-size: 0.75rem;
+    font-weight: 700;
+    cursor: pointer;
+    border: 1.5px solid transparent;
+    transition: all 0.15s ease;
+  }
+
+  .help-badge:hover {
+    background-color: var(--bizdoc-green);
+    color: var(--bizdoc-milk);
+  }
+}
+
+/* ============================================
+   ANIMATIONS
+   ============================================ */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-up {
+  animation: fadeUp 0.35s ease forwards;
+}
+
+@keyframes shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
 }

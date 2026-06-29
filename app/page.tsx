@@ -172,11 +172,7 @@ export default function BusinessRegistrationForm() {
           toast.error("Please add at least one shareholder for Company Limited registration")
           return
         }
-        if (!formData.totalShares || formData.totalShares <= 0) {
-          toast.error("Please specify the total number of shares")
-          return
         }
-      }
     }
 
     setIsSubmitting(true)
@@ -315,38 +311,45 @@ export default function BusinessRegistrationForm() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="bg-card border-b border-border shadow-sm">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 py-4 sm:py-8">
-          <div className="flex items-center space-x-3 sm:space-x-4">
-            <div className="w-10 h-10 sm:w-14 sm:h-14 bg-primary rounded-lg flex items-center justify-center shadow-md">
-              <Building2 className="h-5 w-5 sm:h-7 sm:w-7 text-primary-foreground" />
-            </div>
+    <div className="min-h-screen" style={{ backgroundColor: 'var(--bizdoc-milk)' }}>
+      {/* ── Bizdoc Header ─────────────────────── */}
+      <header className="bizdoc-header">
+        <div className="max-w-4xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <img
+              src="/bizdoc-logo.jpeg"
+              alt="Bizdoc Logo"
+              className="w-9 h-9 sm:w-11 sm:h-11 object-contain rounded"
+              style={{ filter: 'brightness(0) invert(1)' }}
+            />
             <div>
-              <h1 className="text-2xl sm:text-4xl font-serif font-bold text-foreground">BIZDOC CONSULT</h1>
-              <p className="text-sm sm:text-base text-muted-foreground font-medium">
-                Professional Business Registration Services
-              </p>
+              <div className="bizdoc-wordmark">Biz<span>doc</span></div>
+              <div className="bizdoc-tagline">We handle CAC so you can handle business.</div>
             </div>
+          </div>
+          <div className="hidden sm:flex items-center gap-1.5">
+            <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: 'var(--bizdoc-gold)', display: 'inline-block' }} />
+            <span className="text-xs font-medium" style={{ color: 'rgba(255,251,235,0.6)', letterSpacing: '0.06em' }}>HAMZURY DIVISION</span>
           </div>
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 py-4 sm:py-8">
+      <main className="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
         {currentStep === 0 && (
-          <Card className="card-enhanced">
-            <CardHeader className="text-center pb-6 sm:pb-8">
-              <CardTitle className="text-2xl sm:text-4xl font-serif font-bold text-primary mb-4 sm:mb-6">
-                Business Registration Requirements Form
+          <Card className="card-enhanced overflow-hidden">
+            {/* Hero accent bar */}
+            <div style={{ height: 4, background: 'linear-gradient(90deg, var(--bizdoc-green) 0%, var(--bizdoc-gold) 100%)' }} />
+            <CardHeader className="text-center pb-6 sm:pb-8 pt-8">
+              <div className="gold-divider" />
+              <CardTitle className="text-2xl sm:text-3xl font-bold mb-3" style={{ color: 'var(--bizdoc-green)', letterSpacing: '-0.03em' }}>
+                Business Registration
               </CardTitle>
-              <div className="max-w-2xl mx-auto space-y-4 sm:space-y-6 text-muted-foreground">
-                <p className="text-base sm:text-lg leading-relaxed">
-                  Welcome! This form is designed to help us collect the necessary information and documents required for
-                  your business registration with BIZDOC CONSULT. Please select the type of registration you want to
-                  apply for, then provide the requested details.
+              <div className="max-w-xl mx-auto space-y-3 sm:space-y-4" style={{ color: 'var(--bizdoc-muted)' }}>
+                <p className="text-sm sm:text-base leading-relaxed">
+                  Fill in your details below. We will handle the rest with the Corporate Affairs Commission.
                 </p>
-                <p className="font-bold text-base sm:text-lg text-foreground">
-                  Choose your registration type below to get started.
+                <p className="text-sm font-medium" style={{ color: 'var(--bizdoc-charcoal)' }}>
+                  Choose your registration type to get started.
                 </p>
               </div>
             </CardHeader>
@@ -354,12 +357,11 @@ export default function BusinessRegistrationForm() {
               <div className="text-center mb-6">
                 <button
                   onClick={() => setShowHelp(true)}
-                  className="inline-flex items-center space-x-2 text-primary hover:text-primary/80 transition-colors duration-200 bg-primary/10 hover:bg-primary/20 px-4 py-2 rounded-lg border border-primary/30"
+                  className="inline-flex items-center gap-2 text-sm font-medium px-4 py-2 rounded-lg border transition-all duration-150"
+                  style={{ color: 'var(--bizdoc-green)', backgroundColor: 'var(--bizdoc-green-10)', borderColor: 'rgba(27,77,62,0.2)' }}
                 >
                   <HelpCircle className="h-4 w-4" />
-                  <span className="text-sm font-medium">
-                    Not sure which one to choose? Click to see which one suits you
-                  </span>
+                  Not sure which one to choose? Click to see which one suits you
                 </button>
               </div>
 
@@ -369,69 +371,65 @@ export default function BusinessRegistrationForm() {
                 className="space-y-3 sm:space-y-4"
               >
                 <div
-                  className={`cursor-pointer p-4 sm:p-6 border-2 rounded-lg transition-all duration-200 shadow-sm ${
+                  className={`cursor-pointer p-4 sm:p-5 border-2 rounded-lg transition-all duration-200 ${
                     formData.registrationType === "bn"
-                      ? "border-primary bg-primary/10 shadow-md"
-                      : "border-border hover:border-primary/50 hover:bg-secondary/50"
+                      ? "shadow-sm"
+                      : "hover:border-opacity-60"
                   }`}
-                  onClick={() => updateFormData("registrationType", "bn")}
-                >
+                  style={formData.registrationType === "bn"
+                    ? { borderColor: 'var(--bizdoc-green)', backgroundColor: 'var(--bizdoc-green-10)' }
+                    : { borderColor: 'var(--bizdoc-hairline)', backgroundColor: '#fff' }}
+                  onClick={() => updateFormData("registrationType", "bn")}>
                   <div className="flex items-start space-x-3 sm:space-x-4">
                     <RadioGroupItem value="bn" id="bn" className="mt-1" />
                     <div className="flex-1 min-w-0">
-                      <Label htmlFor="bn" className="text-lg sm:text-xl font-bold cursor-pointer text-foreground block">
-                        Business Name (BN)
+                      <Label htmlFor="bn" className="text-base sm:text-lg font-semibold cursor-pointer block" style={{ color: 'var(--bizdoc-green)' }}>
+                        Business Name
                       </Label>
-                      <p className="text-sm text-muted-foreground mt-1 sm:mt-2 leading-relaxed">
-                        Register a business name for sole proprietorship or partnership
+                      <p className="text-sm mt-1 leading-relaxed" style={{ color: 'var(--bizdoc-muted)' }}>
+                        Sole proprietorship or partnership — simple, fast, affordable.
                       </p>
                     </div>
                   </div>
                 </div>
 
                 <div
-                  className={`cursor-pointer p-4 sm:p-6 border-2 rounded-lg transition-all duration-200 shadow-sm ${
-                    formData.registrationType === "company"
-                      ? "border-primary bg-primary/10 shadow-md"
-                      : "border-border hover:border-primary/50 hover:bg-secondary/50"
+                  className={`cursor-pointer p-4 sm:p-5 border-2 rounded-lg transition-all duration-200 ${
+                    formData.registrationType === "company" ? "shadow-sm" : ""
                   }`}
-                  onClick={() => updateFormData("registrationType", "company")}
-                >
+                  style={formData.registrationType === "company"
+                    ? { borderColor: 'var(--bizdoc-green)', backgroundColor: 'var(--bizdoc-green-10)' }
+                    : { borderColor: 'var(--bizdoc-hairline)', backgroundColor: '#fff' }}
+                  onClick={() => updateFormData("registrationType", "company")}>
                   <div className="flex items-start space-x-3 sm:space-x-4">
                     <RadioGroupItem value="company" id="company" className="mt-1" />
                     <div className="flex-1 min-w-0">
-                      <Label
-                        htmlFor="company"
-                        className="text-lg sm:text-xl font-bold cursor-pointer text-foreground block"
-                      >
+                      <Label htmlFor="company" className="text-base sm:text-lg font-semibold cursor-pointer block" style={{ color: 'var(--bizdoc-green)' }}>
                         Company Limited
                       </Label>
-                      <p className="text-sm text-muted-foreground mt-1 sm:mt-2 leading-relaxed">
-                        Incorporate a limited liability company with shareholders and directors
+                      <p className="text-sm mt-1 leading-relaxed" style={{ color: 'var(--bizdoc-muted)' }}>
+                        Limited liability company with shareholders and directors.
                       </p>
                     </div>
                   </div>
                 </div>
 
                 <div
-                  className={`cursor-pointer p-4 sm:p-6 border-2 rounded-lg transition-all duration-200 shadow-sm ${
-                    formData.registrationType === "trustees"
-                      ? "border-primary bg-primary/10 shadow-md"
-                      : "border-border hover:border-primary/50 hover:bg-secondary/50"
+                  className={`cursor-pointer p-4 sm:p-5 border-2 rounded-lg transition-all duration-200 ${
+                    formData.registrationType === "trustees" ? "shadow-sm" : ""
                   }`}
-                  onClick={() => updateFormData("registrationType", "trustees")}
-                >
+                  style={formData.registrationType === "trustees"
+                    ? { borderColor: 'var(--bizdoc-green)', backgroundColor: 'var(--bizdoc-green-10)' }
+                    : { borderColor: 'var(--bizdoc-hairline)', backgroundColor: '#fff' }}
+                  onClick={() => updateFormData("registrationType", "trustees")}>
                   <div className="flex items-start space-x-3 sm:space-x-4">
                     <RadioGroupItem value="trustees" id="trustees" className="mt-1" />
                     <div className="flex-1 min-w-0">
-                      <Label
-                        htmlFor="trustees"
-                        className="text-lg sm:text-xl font-bold cursor-pointer text-foreground block"
-                      >
+                      <Label htmlFor="trustees" className="text-base sm:text-lg font-semibold cursor-pointer block" style={{ color: 'var(--bizdoc-green)' }}>
                         Incorporated Trustees
                       </Label>
-                      <p className="text-sm text-muted-foreground mt-1 sm:mt-2 leading-relaxed">
-                        Register a non-profit organization, NGO, or charitable organization
+                      <p className="text-sm mt-1 leading-relaxed" style={{ color: 'var(--bizdoc-muted)' }}>
+                        Non-profit, NGO, or charitable organization.
                       </p>
                     </div>
                   </div>
@@ -771,39 +769,6 @@ export default function BusinessRegistrationForm() {
                   </>
                 )}
 
-                {/* Shares & Allotment Section (Company only) */}
-                {formData.registrationType === "company" && (
-                  <Card className="card-enhanced">
-                    <CardHeader>
-                      <CardTitle className="section-title">Shares & Allotment</CardTitle>
-                    </CardHeader>
-                    <CardContent className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-                      <div>
-                        <label className="form-label">Total Shares</label>
-                        <input
-                          type="number"
-                          min="1"
-                          className="form-input"
-                          value={formData.totalShares || ""}
-                          onChange={(e) =>
-                            updateFormData("totalShares", Math.max(1, Number.parseInt(e.target.value) || 0))
-                          }
-                          placeholder="Enter total number of shares"
-                        />
-                      </div>
-                      <div>
-                        <label className="form-label">Allotment Details</label>
-                        <textarea
-                          className="form-input resize-none"
-                          rows={3}
-                          value={formData.allotmentDetails}
-                          onChange={(e) => updateFormData("allotmentDetails", e.target.value)}
-                          placeholder="Describe share allotment details"
-                        />
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
 
                 {/* BN Specific Sections */}
                 {formData.registrationType === "bn" && (
@@ -1548,6 +1513,13 @@ export default function BusinessRegistrationForm() {
           </div>
         </div>
       )}
+      {/* ── Brand Footer ──────────────────────── */}
+      <footer className="bizdoc-footer-tag">
+        <span style={{ color: 'var(--bizdoc-gold)', marginRight: 6 }}>◆</span>
+        Bizdoc by Hamzury · Tax &amp; Compliance
+        <span style={{ margin: '0 8px', opacity: 0.35 }}>·</span>
+        Built to Last.
+      </footer>
     </div>
   )
 }

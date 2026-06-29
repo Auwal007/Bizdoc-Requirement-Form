@@ -1,25 +1,24 @@
 import type React from "react"
 import type { Metadata } from "next"
-import { Space_Grotesk } from "next/font/google"
-import { DM_Sans } from "next/font/google"
+import { Inter } from "next/font/google"
 import "./globals.css"
 
-const spaceGrotesk = Space_Grotesk({
+const inter = Inter({
   subsets: ["latin"],
   display: "swap",
-  variable: "--font-space-grotesk",
-})
-
-const dmSans = DM_Sans({
-  subsets: ["latin"],
-  display: "swap",
-  variable: "--font-dm-sans",
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-inter",
 })
 
 export const metadata: Metadata = {
-  title: "BIZDOC CONSULT - Business Registration",
-  description: "Professional business registration services",
-  generator: "v0.app",
+  title: "Bizdoc — Business Registration",
+  description: "Professional business registration services. Company Limited, Business Name, and Incorporation of Trustees — handled with precision.",
+  keywords: ["business registration", "company incorporation", "CAC", "Nigeria", "Bizdoc", "Hamzury"],
+  openGraph: {
+    title: "Bizdoc — Business Registration",
+    description: "We handle CAC so you can handle business.",
+    siteName: "Bizdoc by Hamzury",
+  },
 }
 
 export default function RootLayout({
@@ -28,8 +27,8 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className={`${spaceGrotesk.variable} ${dmSans.variable} antialiased`}>
-      <body className="font-sans">{children}</body>
+    <html lang="en" className={`${inter.variable} antialiased`}>
+      <body className="font-sans bizdoc-page">{children}</body>
     </html>
   )
 }
