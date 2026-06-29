@@ -271,6 +271,16 @@ export default function BusinessRegistrationForm() {
           toast.error("Business Address: State is required")
           return false
         }
+        if (formData.registrationType === "company") {
+          if (!formData.totalShares || formData.totalShares <= 0) {
+            toast.error("Total Share Capital must be greater than 0")
+            return false
+          }
+          if (!formData.allotmentDetails?.trim()) {
+            toast.error("Allotment Details are required")
+            return false
+          }
+        }
       }
       return true
     }
@@ -1418,6 +1428,40 @@ export default function BusinessRegistrationForm() {
                           value={formData.natureOfBusiness}
                           onChange={(e) => updateFormData("natureOfBusiness", e.target.value)}
                           placeholder="Describe the nature and activities of your business"
+                        />
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Company Share Capital Details Section */}
+                {formData.registrationType === "company" && (
+                  <Card className="card-enhanced">
+                    <CardHeader>
+                      <CardTitle className="section-title">Share Capital Details</CardTitle>
+                    </CardHeader>
+                    <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+                      <div>
+                        <label className="form-label">Total Share Capital (Shares) *</label>
+                        <input
+                          type="number"
+                          className="form-input"
+                          value={formData.totalShares || ""}
+                          onChange={(e) => updateFormData("totalShares", parseInt(e.target.value) || 0)}
+                          placeholder="e.g. 1000000"
+                          min="1"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="form-label">Allotment Details *</label>
+                        <input
+                          type="text"
+                          className="form-input"
+                          value={formData.allotmentDetails || ""}
+                          onChange={(e) => updateFormData("allotmentDetails", e.target.value)}
+                          placeholder="e.g. 1,000,000 Ordinary Shares of N1.00 each"
+                          required
                         />
                       </div>
                     </CardContent>
