@@ -39,6 +39,9 @@ export interface GoogleRegistrationPayload {
   
   // Flattened renamed files list
   files: GoogleFilePayload[];
+  
+  // Optional client notes
+  additionalNotes?: string;
 }
 
 export async function submitToGoogleAppsScript(payload: GoogleRegistrationPayload): Promise<{ success: boolean; folderUrl?: string; message?: string; error?: string }> {

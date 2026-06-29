@@ -74,10 +74,12 @@ async function compressImageFile(file: File): Promise<File> {
                 return
               }
               try {
-                const compressedFile = new File([blob], file.name, {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const FileConstructor = (typeof globalThis !== "undefined" && (globalThis as any).File) || File
+                const compressedFile = new FileConstructor([blob], file.name, {
                   type: "image/jpeg",
                   lastModified: Date.now(),
-                })
+                }) as File
                 resolve(compressedFile)
               } catch (fileErr) {
                 console.error("[FILE-UPLOAD] File constructor error, fallback to original:", fileErr)
