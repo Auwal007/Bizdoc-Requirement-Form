@@ -17,67 +17,92 @@ interface FileUploadProps {
   value?: File[]
 }
 
-// Helper function for client-side image compression
+// Helper function for client-side image compression with safety fallbacks
 async function compressImageFile(file: File): Promise<File> {
   if (!file.type.startsWith("image/")) {
     return file
   }
 
   return new Promise((resolve) => {
+    // Set a safety timeout of 800ms to prevent hanging if browser canvas fails
+    const timeoutId = setTimeout(() => {
+      console.warn("[FILE-UPLOAD] Image compression timed out, returning original file")
+      resolve(file)
+    }, 800)
+
     const reader = new FileReader()
     reader.onload = (event) => {
       const img = new Image()
       img.onload = () => {
-        const canvas = document.createElement("canvas")
-        let width = img.width
-        let height = img.height
+        try {
+          const canvas = document.createElement("canvas")
+          let width = img.width
+          let height = img.height
 
-        const MAX_WIDTH = 1200
-        const MAX_HEIGHT = 1200
+          const MAX_WIDTH = 1200
+          const MAX_HEIGHT = 1200
 
-        if (width > height) {
-          if (width > MAX_WIDTH) {
-            height = Math.round((height * MAX_WIDTH) / width)
-            width = MAX_WIDTH
-          }
-        } else {
-          if (height > MAX_HEIGHT) {
-            width = Math.round((width * MAX_HEIGHT) / height)
-            height = MAX_HEIGHT
-          }
-        }
-
-        canvas.width = width
-        canvas.height = height
-
-        const ctx = canvas.getContext("2d")
-        if (!ctx) {
-          resolve(file)
-          return
-        }
-
-        ctx.drawImage(img, 0, 0, width, height)
-
-        canvas.toBlob(
-          (blob) => {
-            if (!blob) {
-              resolve(file)
-              return
+          if (width > height) {
+            if (width > MAX_WIDTH) {
+              height = Math.round((height * MAX_WIDTH) / width)
+              width = MAX_WIDTH
             }
-            const compressedFile = new File([blob], file.name, {
-              type: "image/jpeg",
-              lastModified: Date.now(),
-            })
-            resolve(compressedFile)
-          },
-          "image/jpeg",
-          0.75
-        )
+          } else {
+            if (height > MAX_HEIGHT) {
+              width = Math.round((width * MAX_HEIGHT) / height)
+              height = MAX_HEIGHT
+            }
+          }
+
+          canvas.width = width
+          canvas.height = height
+
+          const ctx = canvas.getContext("2d")
+          if (!ctx) {
+            clearTimeout(timeoutId)
+            resolve(file)
+            return
+          }
+
+          ctx.drawImage(img, 0, 0, width, height)
+
+          canvas.toBlob(
+            (blob) => {
+              clearTimeout(timeoutId)
+              if (!blob) {
+                resolve(file)
+                return
+              }
+              try {
+                const compressedFile = new File([blob], file.name, {
+                  type: "image/jpeg",
+                  lastModified: Date.now(),
+                })
+                resolve(compressedFile)
+              } catch (fileErr) {
+                console.error("[FILE-UPLOAD] File constructor error, fallback to original:", fileErr)
+                resolve(file)
+              }
+            },
+            "image/jpeg",
+            0.75
+          )
+        } catch (canvasErr) {
+          console.error("[FILE-UPLOAD] Canvas/context error, fallback to original:", canvasErr)
+          clearTimeout(timeoutId)
+          resolve(file)
+        }
       }
-      img.onerror = () => resolve(file)
+      img.onerror = () => {
+        clearTimeout(timeoutId)
+        resolve(file)
+      }
       img.src = event.target?.result as string
     }
-    reader.onerror = () => resolve(file)
+    reader.onerror = () => {
+      clearTimeout(timeoutId)
+      resolve(file)
+    }
     reader.readAsDataURL(file)
   })
 }
