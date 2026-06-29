@@ -1,7 +1,8 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useSearchParams } from "next/navigation"
+import { Suspense } from "react"
 import { Building2, Shield, ChevronRight, ChevronLeft, HelpCircle, X, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -61,21 +62,35 @@ interface FormData {
   trustees: any[]
 }
 
+// Tiny component to safely read URL params inside a Suspense boundary
+function SearchParamsHandler({
+  onTypeDetected,
+}: {
+  onTypeDetected: (type: "bn" | "company" | "trustees") => void
+}) {
+  const searchParams = useSearchParams()
+  useEffect(() => {
+    const type = searchParams.get("type")
+    if (type === "bn" || type === "company" || type === "trustees") {
+      onTypeDetected(type)
+    }
+  }, [searchParams, onTypeDetected])
+  return null
+}
+
 export default function BusinessRegistrationForm() {
   const [currentStep, setCurrentStep] = useState(0)
   const [showHelp, setShowHelp] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showSuccessModal, setShowSuccessModal] = useState(false)
-  const searchParams = useSearchParams()
 
-  // Auto-select registration type and skip landing page when a ?type= URL param is provided
-  useEffect(() => {
-    const type = searchParams.get("type")
-    if (type === "bn" || type === "company" || type === "trustees") {
+  const handleTypeDetected = useCallback(
+    (type: "bn" | "company" | "trustees") => {
       setFormData((prev) => ({ ...prev, registrationType: type }))
       setCurrentStep(1)
-    }
-  }, [searchParams])
+    },
+    []
+  )
   const [formData, setFormData] = useState<FormData>({
     registrationType: "",
     businessNameType: "sole",
@@ -820,6 +835,10 @@ export default function BusinessRegistrationForm() {
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: 'var(--bizdoc-milk)' }}>
+      {/* Deep-link URL param handler — must be inside Suspense for Next.js App Router */}
+      <Suspense fallback={null}>
+        <SearchParamsHandler onTypeDetected={handleTypeDetected} />
+      </Suspense>
       {/* ── Bizdoc Header ─────────────────────── */}
       <header className="bizdoc-header">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
