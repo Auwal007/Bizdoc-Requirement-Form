@@ -1481,7 +1481,7 @@ export default function BusinessRegistrationForm() {
                       Back
                     </Button>
                     <Button onClick={nextStep} className="submit-button order-1 sm:order-2">
-                      Review Application
+                      Review Details
                       <ChevronRight className="ml-2 h-4 w-4" />
                     </Button>
                   </div>
@@ -1513,7 +1513,7 @@ export default function BusinessRegistrationForm() {
                       Back
                     </Button>
                     <Button onClick={nextStep} className="submit-button order-1 sm:order-2">
-                      Review Application
+                      Review Details
                       <ChevronRight className="ml-2 h-4 w-4" />
                     </Button>
                   </div>
@@ -1545,7 +1545,7 @@ export default function BusinessRegistrationForm() {
                       Back
                     </Button>
                     <Button onClick={nextStep} className="submit-button order-1 sm:order-2">
-                      Review Application
+                      Review Details
                       <ChevronRight className="ml-2 h-4 w-4" />
                     </Button>
                   </div>
@@ -1558,12 +1558,12 @@ export default function BusinessRegistrationForm() {
                 <CardHeader>
                   <CardTitle className="section-title">Review & Submit</CardTitle>
                   <p className="text-muted-foreground">
-                    Please review your information before submitting your application.
+                    Please review your information before submitting your details.
                   </p>
                 </CardHeader>
                 <CardContent className="space-y-6 sm:space-y-8">
                   <div className="form-section">
-                    <h3 className="section-title">Application Summary</h3>
+                    <h3 className="section-title">Details Summary</h3>
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 text-sm">
                       <div>
                         <span className="font-medium text-foreground">Registration Type:</span>
@@ -2082,7 +2082,7 @@ export default function BusinessRegistrationForm() {
                           Submitting...
                         </>
                       ) : (
-                        "Submit Application"
+                        "Submit Details"
                       )}
                     </Button>
                   </div>
@@ -2105,13 +2105,13 @@ export default function BusinessRegistrationForm() {
                 </svg>
               </div>
               <h3 className="text-2xl font-bold text-white mb-2">Success!</h3>
-              <p className="text-green-100">Your application has been submitted</p>
+              <p className="text-green-100">Your details has been submitted</p>
             </div>
 
             {/* Content */}
             <div className="p-8 text-center">
               <div className="bg-green-50 border border-green-200 rounded-xl p-6 mb-6">
-                <p className="text-green-800 font-semibold text-lg">We have received your application.</p>
+                <p className="text-green-800 font-semibold text-lg">We have received your details.</p>
               </div>
 
               {/* Close button */}
