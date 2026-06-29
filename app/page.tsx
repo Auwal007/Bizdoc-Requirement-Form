@@ -606,7 +606,7 @@ export default function BusinessRegistrationForm() {
           toast.error("Please add at least one shareholder for Company Limited registration")
           return
         }
-        }
+      }
     }
 
     setIsSubmitting(true)
