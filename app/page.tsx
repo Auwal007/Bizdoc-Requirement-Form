@@ -392,22 +392,6 @@ export default function BusinessRegistrationForm() {
             toast.error(`${label}: Residential Address (State) is required`)
             return false
           }
-          if (!d.serviceAddress_building?.trim()) {
-            toast.error(`${label}: Service Address (Building/Plot No.) is required`)
-            return false
-          }
-          if (!d.serviceAddress_street?.trim()) {
-            toast.error(`${label}: Service Address (Street Name) is required`)
-            return false
-          }
-          if (!d.serviceAddress_lga?.trim()) {
-            toast.error(`${label}: Service Address (LGA) is required`)
-            return false
-          }
-          if (!d.serviceAddress_state) {
-            toast.error(`${label}: Service Address (State) is required`)
-            return false
-          }
           if (!d.files?.idCard || d.files.idCard.length === 0) {
             toast.error(`${label}: ID Card document upload is required`)
             return false
@@ -649,7 +633,7 @@ export default function BusinessRegistrationForm() {
         return `${building || ""}, ${street || ""}, ${lga || ""} LGA, ${state || ""} State`.replace(/(^, \s*)|(, \s*$)/g, "")
       }
 
-      // Format arrays with concatenated residential/service address strings
+      // Format arrays with concatenated residential address strings
       const formattedDirectors = formData.directors.map((person) => ({
         ...person,
         residentialAddress: formatAddress(
@@ -658,12 +642,7 @@ export default function BusinessRegistrationForm() {
           person.residentialAddress_lga,
           person.residentialAddress_state
         ),
-        serviceAddress: formatAddress(
-          person.serviceAddress_building,
-          person.serviceAddress_street,
-          person.serviceAddress_lga,
-          person.serviceAddress_state
-        ),
+
       }))
 
       const formattedShareholders = formData.shareholders.map((person) => ({

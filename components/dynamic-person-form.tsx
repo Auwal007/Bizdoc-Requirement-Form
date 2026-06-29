@@ -25,11 +25,6 @@ export interface PersonData {
   residentialAddress_lga: string
   residentialAddress_state: string
   
-  // Service Address Fields (Directors only)
-  serviceAddress_building?: string
-  serviceAddress_street?: string
-  serviceAddress_lga?: string
-  serviceAddress_state?: string
 
   dateOfBirth?: string
   shareAllocation?: number
@@ -75,10 +70,6 @@ export function DynamicPersonForm({ title, type, persons, onPersonsChange, total
     }
 
     if (type === "director") {
-      newPerson.serviceAddress_building = ""
-      newPerson.serviceAddress_street = ""
-      newPerson.serviceAddress_lga = ""
-      newPerson.serviceAddress_state = ""
       newPerson.dateOfBirth = ""
       newPerson.isShareholder = false
     }
@@ -374,56 +365,6 @@ export function DynamicPersonForm({ title, type, persons, onPersonsChange, total
                 </div>
               </div>
 
-              {/* Split Service Address Details (Director only) */}
-              {type === "director" && (
-                <div className="space-y-4 pt-2 border-t border-dashed border-slate-200">
-                  <label className="form-label font-bold text-sm" style={{ color: 'var(--bizdoc-green)' }}>
-                    Service Address *
-                  </label>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <div>
-                      <label className="form-label text-xs">Building No. / House Name *</label>
-                      <Input
-                        className="form-input"
-                        value={person.serviceAddress_building}
-                        onChange={(e) => updatePerson(person.id, "serviceAddress_building", e.target.value)}
-                        placeholder="e.g., Plot 12"
-                      />
-                    </div>
-                    <div>
-                      <label className="form-label text-xs">Street Name *</label>
-                      <Input
-                        className="form-input"
-                        value={person.serviceAddress_street}
-                        onChange={(e) => updatePerson(person.id, "serviceAddress_street", e.target.value)}
-                        placeholder="e.g., Adeniran Street"
-                      />
-                    </div>
-                    <div>
-                      <label className="form-label text-xs">Local Government (LGA) *</label>
-                      <Input
-                        className="form-input"
-                        value={person.serviceAddress_lga}
-                        onChange={(e) => updatePerson(person.id, "serviceAddress_lga", e.target.value)}
-                        placeholder="e.g., Ikeja LGA"
-                      />
-                    </div>
-                    <div>
-                      <label className="form-label text-xs">State *</label>
-                      <select
-                        className="form-input h-10 py-2 border rounded-md"
-                        value={person.serviceAddress_state}
-                        onChange={(e) => updatePerson(person.id, "serviceAddress_state", e.target.value)}
-                      >
-                        <option value="" disabled>Select State</option>
-                        {NIGERIAN_STATES.map((state) => (
-                          <option key={state} value={state}>{state}</option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-                </div>
-              )}
 
               {/* File Upload zone */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 pt-2">
