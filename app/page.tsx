@@ -11,19 +11,32 @@ import { FileUpload } from "@/components/file-upload"
 import { DynamicPersonForm } from "@/components/dynamic-person-form"
 import { toast } from "sonner"
 
+const NIGERIAN_STATES = [
+  "Abia", "Adamawa", "Akwa Ibom", "Anambra", "Bauchi", "Bayelsa", "Benue", "Borno", 
+  "Cross River", "Delta", "Ebonyi", "Edo", "Ekiti", "Enugu", "FCT (Abuja)", "Gombe", 
+  "Imo", "Jigawa", "Kaduna", "Kano", "Katsina", "Kebbi", "Kogi", "Kwara", "Lagos", 
+  "Nasarawa", "Niger", "Ogun", "Ondo", "Osun", "Oyo", "Plateau", "Rivers", "Sokoto", 
+  "Taraba", "Yobe", "Zamfara"
+]
+
 interface FormData {
   registrationType: "bn" | "company" | "trustees" | ""
   businessNameType?: "sole" | "partnership"
   proposedName1: string
   proposedName2: string
   proposedName3: string
+  
+  // Split Business Address fields
   businessAddress: string
+  businessAddress_building: string
+  businessAddress_street: string
+  businessAddress_lga: string
+  businessAddress_state: string
+
   email: string
   phone: string
   natureOfBusiness: string
-  // BN specific
   proprietors: any[]
-  // Company specific
   directors: any[]
   shareholders: any[]
   totalShares: number
@@ -31,7 +44,14 @@ interface FormData {
   organizationName: string
   organizationEmail: string
   organizationPhone: string
+  
+  // Split Office Address fields
   officeAddress: string
+  officeAddress_building: string
+  officeAddress_street: string
+  officeAddress_lga: string
+  officeAddress_state: string
+
   keyObjectives: string
   trusteeTenure: string
   sealCustodian: string
@@ -51,6 +71,10 @@ export default function BusinessRegistrationForm() {
     proposedName2: "",
     proposedName3: "",
     businessAddress: "",
+    businessAddress_building: "",
+    businessAddress_street: "",
+    businessAddress_lga: "",
+    businessAddress_state: "",
     email: "",
     phone: "",
     natureOfBusiness: "",
@@ -63,6 +87,10 @@ export default function BusinessRegistrationForm() {
     organizationEmail: "",
     organizationPhone: "",
     officeAddress: "",
+    officeAddress_building: "",
+    officeAddress_street: "",
+    officeAddress_lga: "",
+    officeAddress_state: "",
     keyObjectives: "",
     trusteeTenure: "",
     sealCustodian: "",
@@ -89,9 +117,430 @@ export default function BusinessRegistrationForm() {
     setFormData((prev) => ({ ...prev, [field]: value }))
   }
 
+  // Real-time sync function from Directors to Shareholders list
+  const handleDirectorsChange = (updatedDirectors: any[]) => {
+    let updatedShareholders = [...formData.shareholders]
+    
+    updatedDirectors.forEach((dir) => {
+      if (dir.isShareholder) {
+        const existingShIndex = updatedShareholders.findIndex(
+          (sh) => sh.copiedFromDirectorId === dir.id
+        )
+        
+        const shData = {
+          fullName: dir.fullName,
+          email: dir.email,
+          phone: dir.phone,
+          nin: dir.nin,
+          residentialAddress_building: dir.residentialAddress_building,
+          residentialAddress_street: dir.residentialAddress_street,
+          residentialAddress_lga: dir.residentialAddress_lga,
+          residentialAddress_state: dir.residentialAddress_state,
+          files: {
+            idCard: dir.files?.idCard ? [...dir.files.idCard] : [],
+            passport: dir.files?.passport ? [...dir.files.passport] : [],
+            signature: dir.files?.signature ? [...dir.files.signature] : []
+          },
+          copiedFromDirectorId: dir.id,
+        }
+        
+        if (existingShIndex >= 0) {
+          // Update existing shareholder details but preserve their share allocation
+          updatedShareholders[existingShIndex] = {
+            ...updatedShareholders[existingShIndex],
+            ...shData
+          }
+        } else {
+          // Add new synced shareholder
+          updatedShareholders.push({
+            id: `sh_${dir.id}`,
+            ...shData,
+            shareAllocation: 0
+          })
+        }
+      } else {
+        // If director is no longer a shareholder, remove the synced shareholder
+        updatedShareholders = updatedShareholders.filter(
+          (sh) => sh.copiedFromDirectorId !== dir.id
+        )
+      }
+    })
+    
+    // Clean up any shareholders whose director no longer exists
+    const activeDirectorIds = new Set(updatedDirectors.map(d => d.id))
+    updatedShareholders = updatedShareholders.filter(
+      (sh) => !sh.copiedFromDirectorId || activeDirectorIds.has(sh.copiedFromDirectorId)
+    )
+    
+    setFormData(prev => ({
+      ...prev,
+      directors: updatedDirectors,
+      shareholders: updatedShareholders
+    }))
+  }
+
+  const validateCurrentStep = () => {
+    const isValidEmail = (emailStr: string) => {
+      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailStr)
+    }
+
+    if (currentStep === 0) {
+      if (!formData.registrationType) {
+        toast.error("Please select a registration type to proceed")
+        return false
+      }
+      return true
+    }
+
+    if (currentStep === 1) {
+      if (formData.registrationType === "trustees") {
+        if (!formData.organizationName?.trim()) {
+          toast.error("Organization Name is required")
+          return false
+        }
+        if (!formData.organizationEmail?.trim() || !isValidEmail(formData.organizationEmail)) {
+          toast.error("A valid Organization Email is required")
+          return false
+        }
+        if (!formData.organizationPhone?.trim()) {
+          toast.error("Organization Phone Number is required")
+          return false
+        }
+        if (!formData.officeAddress_building?.trim()) {
+          toast.error("Office Address: Building/Plot number is required")
+          return false
+        }
+        if (!formData.officeAddress_street?.trim()) {
+          toast.error("Office Address: Street Name is required")
+          return false
+        }
+        if (!formData.officeAddress_lga?.trim()) {
+          toast.error("Office Address: LGA is required")
+          return false
+        }
+        if (!formData.officeAddress_state) {
+          toast.error("Office Address: State is required")
+          return false
+        }
+        if (!formData.keyObjectives?.trim()) {
+          toast.error("Five (5) Key Objectives are required")
+          return false
+        }
+        if (!formData.trusteeTenure?.trim()) {
+          toast.error("Trustee Tenure is required")
+          return false
+        }
+        if (!formData.sealCustodian?.trim()) {
+          toast.error("Custodian of Seal is required")
+          return false
+        }
+        if (!formData.fundingSources?.trim()) {
+          toast.error("Source of Funding is required")
+          return false
+        }
+      } else {
+        if (!formData.proposedName1?.trim() || !formData.proposedName2?.trim() || !formData.proposedName3?.trim()) {
+          toast.error("All three (3) Proposed Names are required")
+          return false
+        }
+        if (!formData.email?.trim() || !isValidEmail(formData.email)) {
+          toast.error("A valid Business Email is required")
+          return false
+        }
+        if (!formData.phone?.trim()) {
+          toast.error("Business Phone Number is required")
+          return false
+        }
+        if (!formData.natureOfBusiness?.trim()) {
+          toast.error("Business Description/Nature is required")
+          return false
+        }
+        if (!formData.businessAddress_building?.trim()) {
+          toast.error("Business Address: Building/Plot number is required")
+          return false
+        }
+        if (!formData.businessAddress_street?.trim()) {
+          toast.error("Business Address: Street Name is required")
+          return false
+        }
+        if (!formData.businessAddress_lga?.trim()) {
+          toast.error("Business Address: LGA is required")
+          return false
+        }
+        if (!formData.businessAddress_state) {
+          toast.error("Business Address: State is required")
+          return false
+        }
+      }
+      return true
+    }
+
+    if (currentStep === 2) {
+      if (formData.registrationType === "bn") {
+        if (formData.proprietors.length === 0) {
+          toast.error("Please add at least one proprietor")
+          return false
+        }
+        if (formData.businessNameType === "sole" && formData.proprietors.length !== 1) {
+          toast.error("Sole proprietorship must have exactly one (1) proprietor")
+          return false
+        }
+        if (formData.businessNameType === "partnership" && formData.proprietors.length < 2) {
+          toast.error("Partnership must have at least two (2) partners/proprietors")
+          return false
+        }
+
+        for (let i = 0; i < formData.proprietors.length; i++) {
+          const p = formData.proprietors[i]
+          const label = `Proprietor ${i + 1}`
+          if (!p.fullName?.trim()) {
+            toast.error(`${label}: Full Name is required`)
+            return false
+          }
+          if (!p.email?.trim() || !isValidEmail(p.email)) {
+            toast.error(`${label}: A valid Email is required`)
+            return false
+          }
+          if (!p.phone?.trim()) {
+            toast.error(`${label}: Phone Number is required`)
+            return false
+          }
+          if (!p.nin?.trim() || p.nin.trim().length !== 11) {
+            toast.error(`${label}: NIN Number must be exactly 11 digits`)
+            return false
+          }
+          if (!p.dateOfBirth) {
+            toast.error(`${label}: Date of Birth is required`)
+            return false
+          }
+          if (!p.residentialAddress_building?.trim()) {
+            toast.error(`${label}: Residential Address (Building/Plot No.) is required`)
+            return false
+          }
+          if (!p.residentialAddress_street?.trim()) {
+            toast.error(`${label}: Residential Address (Street Name) is required`)
+            return false
+          }
+          if (!p.residentialAddress_lga?.trim()) {
+            toast.error(`${label}: Residential Address (LGA) is required`)
+            return false
+          }
+          if (!p.residentialAddress_state) {
+            toast.error(`${label}: Residential Address (State) is required`)
+            return false
+          }
+          if (!p.files?.idCard || p.files.idCard.length === 0) {
+            toast.error(`${label}: ID Card document upload is required`)
+            return false
+          }
+          if (!p.files?.passport || p.files.passport.length === 0) {
+            toast.error(`${label}: Passport photograph upload is required`)
+            return false
+          }
+          if (!p.files?.signature || p.files.signature.length === 0) {
+            toast.error(`${label}: Sample Signature upload is required`)
+            return false
+          }
+        }
+      } else if (formData.registrationType === "company") {
+        if (formData.directors.length === 0) {
+          toast.error("Please add at least one (1) director")
+          return false
+        }
+        if (formData.shareholders.length === 0) {
+          toast.error("Please add at least one (1) shareholder")
+          return false
+        }
+
+        // Validate directors
+        for (let i = 0; i < formData.directors.length; i++) {
+          const d = formData.directors[i]
+          const label = `Director ${i + 1}`
+          if (!d.fullName?.trim()) {
+            toast.error(`${label}: Full Name is required`)
+            return false
+          }
+          if (!d.email?.trim() || !isValidEmail(d.email)) {
+            toast.error(`${label}: A valid Email is required`)
+            return false
+          }
+          if (!d.phone?.trim()) {
+            toast.error(`${label}: Phone Number is required`)
+            return false
+          }
+          if (!d.nin?.trim() || d.nin.trim().length !== 11) {
+            toast.error(`${label}: NIN Number must be exactly 11 digits`)
+            return false
+          }
+          if (!d.dateOfBirth) {
+            toast.error(`${label}: Date of Birth is required`)
+            return false
+          }
+          if (!d.residentialAddress_building?.trim()) {
+            toast.error(`${label}: Residential Address (Building/Plot No.) is required`)
+            return false
+          }
+          if (!d.residentialAddress_street?.trim()) {
+            toast.error(`${label}: Residential Address (Street Name) is required`)
+            return false
+          }
+          if (!d.residentialAddress_lga?.trim()) {
+            toast.error(`${label}: Residential Address (LGA) is required`)
+            return false
+          }
+          if (!d.residentialAddress_state) {
+            toast.error(`${label}: Residential Address (State) is required`)
+            return false
+          }
+          if (!d.serviceAddress_building?.trim()) {
+            toast.error(`${label}: Service Address (Building/Plot No.) is required`)
+            return false
+          }
+          if (!d.serviceAddress_street?.trim()) {
+            toast.error(`${label}: Service Address (Street Name) is required`)
+            return false
+          }
+          if (!d.serviceAddress_lga?.trim()) {
+            toast.error(`${label}: Service Address (LGA) is required`)
+            return false
+          }
+          if (!d.serviceAddress_state) {
+            toast.error(`${label}: Service Address (State) is required`)
+            return false
+          }
+          if (!d.files?.idCard || d.files.idCard.length === 0) {
+            toast.error(`${label}: ID Card document upload is required`)
+            return false
+          }
+          if (!d.files?.signature || d.files.signature.length === 0) {
+            toast.error(`${label}: Sample Signature upload is required`)
+            return false
+          }
+        }
+
+        // Validate shareholders
+        for (let i = 0; i < formData.shareholders.length; i++) {
+          const s = formData.shareholders[i]
+          const label = `Shareholder ${i + 1}`
+          if (!s.fullName?.trim()) {
+            toast.error(`${label}: Full Name is required`)
+            return false
+          }
+          if (!s.email?.trim() || !isValidEmail(s.email)) {
+            toast.error(`${label}: A valid Email is required`)
+            return false
+          }
+          if (!s.phone?.trim()) {
+            toast.error(`${label}: Phone Number is required`)
+            return false
+          }
+          if (!s.nin?.trim() || s.nin.trim().length !== 11) {
+            toast.error(`${label}: NIN Number must be exactly 11 digits`)
+            return false
+          }
+          if (!s.shareAllocation || s.shareAllocation <= 0) {
+            toast.error(`${label}: Share Allocation must be greater than 0`)
+            return false
+          }
+          if (!s.residentialAddress_building?.trim()) {
+            toast.error(`${label}: Residential Address (Building/Plot No.) is required`)
+            return false
+          }
+          if (!s.residentialAddress_street?.trim()) {
+            toast.error(`${label}: Residential Address (Street Name) is required`)
+            return false
+          }
+          if (!s.residentialAddress_lga?.trim()) {
+            toast.error(`${label}: Residential Address (LGA) is required`)
+            return false
+          }
+          if (!s.residentialAddress_state) {
+            toast.error(`${label}: Residential Address (State) is required`)
+            return false
+          }
+          if (!s.files?.idCard || s.files.idCard.length === 0) {
+            toast.error(`${label}: ID Card document upload is required`)
+            return false
+          }
+          if (!s.files?.signature || s.files.signature.length === 0) {
+            toast.error(`${label}: Sample Signature upload is required`)
+            return false
+          }
+        }
+      } else if (formData.registrationType === "trustees") {
+        if (formData.trustees.length < 2) {
+          toast.error("Please add at least two (2) trustees")
+          return false
+        }
+
+        for (let i = 0; i < formData.trustees.length; i++) {
+          const t = formData.trustees[i]
+          const label = `Trustee ${i + 1}`
+          if (!t.fullName?.trim()) {
+            toast.error(`${label}: Full Name is required`)
+            return false
+          }
+          if (!t.email?.trim() || !isValidEmail(t.email)) {
+            toast.error(`${label}: A valid Email is required`)
+            return false
+          }
+          if (!t.phone?.trim()) {
+            toast.error(`${label}: Phone Number is required`)
+            return false
+          }
+          if (!t.nin?.trim() || t.nin.trim().length !== 11) {
+            toast.error(`${label}: NIN Number must be exactly 11 digits`)
+            return false
+          }
+          if (!t.dateOfBirth) {
+            toast.error(`${label}: Date of Birth is required`)
+            return false
+          }
+          if (!t.position?.trim()) {
+            toast.error(`${label}: Trustee Position is required`)
+            return false
+          }
+          if (!t.residentialAddress_building?.trim()) {
+            toast.error(`${label}: Residential Address (Building/Plot No.) is required`)
+            return false
+          }
+          if (!t.residentialAddress_street?.trim()) {
+            toast.error(`${label}: Residential Address (Street Name) is required`)
+            return false
+          }
+          if (!t.residentialAddress_lga?.trim()) {
+            toast.error(`${label}: Residential Address (LGA) is required`)
+            return false
+          }
+          if (!t.residentialAddress_state) {
+            toast.error(`${label}: Residential Address (State) is required`)
+            return false
+          }
+          if (!t.files?.idCard || t.files.idCard.length === 0) {
+            toast.error(`${label}: ID Card document upload is required`)
+            return false
+          }
+          if (!t.files?.passport || t.files.passport.length === 0) {
+            toast.error(`${label}: Passport photograph upload is required`)
+            return false
+          }
+          if (!t.files?.signature || t.files.signature.length === 0) {
+            toast.error(`${label}: Sample Signature upload is required`)
+            return false
+          }
+        }
+      }
+      return true
+    }
+
+    return true
+  }
+
   const nextStep = () => {
-    if (currentStep < steps.length - 1) {
-      setCurrentStep(currentStep + 1)
+    if (validateCurrentStep()) {
+      if (currentStep < steps.length - 1) {
+        setCurrentStep(currentStep + 1)
+      }
     }
   }
 
@@ -100,6 +549,7 @@ export default function BusinessRegistrationForm() {
       setCurrentStep(currentStep - 1)
     }
   }
+
 
   const testDropboxConnection = async () => {
     try {
@@ -193,12 +643,80 @@ export default function BusinessRegistrationForm() {
         proprietorsCount: formData.proprietors.length,
       })
 
+      // Helper function to format address
+      const formatAddress = (building?: string, street?: string, lga?: string, state?: string) => {
+        if (!building && !street && !lga && !state) return ""
+        return `${building || ""}, ${street || ""}, ${lga || ""} LGA, ${state || ""} State`.replace(/(^, \s*)|(, \s*$)/g, "")
+      }
+
+      // Format arrays with concatenated residential/service address strings
+      const formattedDirectors = formData.directors.map((person) => ({
+        ...person,
+        residentialAddress: formatAddress(
+          person.residentialAddress_building,
+          person.residentialAddress_street,
+          person.residentialAddress_lga,
+          person.residentialAddress_state
+        ),
+        serviceAddress: formatAddress(
+          person.serviceAddress_building,
+          person.serviceAddress_street,
+          person.serviceAddress_lga,
+          person.serviceAddress_state
+        ),
+      }))
+
+      const formattedShareholders = formData.shareholders.map((person) => ({
+        ...person,
+        residentialAddress: formatAddress(
+          person.residentialAddress_building,
+          person.residentialAddress_street,
+          person.residentialAddress_lga,
+          person.residentialAddress_state
+        ),
+      }))
+
+      const formattedTrustees = formData.trustees.map((person) => ({
+        ...person,
+        residentialAddress: formatAddress(
+          person.residentialAddress_building,
+          person.residentialAddress_street,
+          person.residentialAddress_lga,
+          person.residentialAddress_state
+        ),
+      }))
+
+      const formattedProprietors = formData.proprietors.map((person) => ({
+        ...person,
+        residentialAddress: formatAddress(
+          person.residentialAddress_building,
+          person.residentialAddress_street,
+          person.residentialAddress_lga,
+          person.residentialAddress_state
+        ),
+      }))
+
       const submitFormData = new FormData()
 
       // Add all form fields
       Object.entries(formData).forEach(([key, value]) => {
-        if (key === "directors" || key === "shareholders" || key === "trustees" || key === "proprietors") {
-          submitFormData.append(key, JSON.stringify(value))
+        if (key === "directors") {
+          submitFormData.append(key, JSON.stringify(formattedDirectors))
+        } else if (key === "shareholders") {
+          submitFormData.append(key, JSON.stringify(formattedShareholders))
+        } else if (key === "trustees") {
+          submitFormData.append(key, JSON.stringify(formattedTrustees))
+        } else if (key === "proprietors") {
+          submitFormData.append(key, JSON.stringify(formattedProprietors))
+        } else if (key === "businessAddress") {
+          submitFormData.append(key, formatAddress(formData.businessAddress_building, formData.businessAddress_street, formData.businessAddress_lga, formData.businessAddress_state))
+        } else if (key === "officeAddress") {
+          submitFormData.append(key, formatAddress(formData.officeAddress_building, formData.officeAddress_street, formData.officeAddress_lga, formData.officeAddress_state))
+        } else if (
+          key.startsWith("businessAddress_") ||
+          key.startsWith("officeAddress_")
+        ) {
+          // Skip split fields as they are compiled above
         } else if (Array.isArray(value)) {
           value.forEach((file, index) => {
             if (file instanceof File) {
@@ -618,15 +1136,55 @@ export default function BusinessRegistrationForm() {
                             />
                           </div>
                         </div>
-                        <div>
-                          <label className="form-label">Office Address</label>
-                          <input
-                            type="text"
-                            className="form-input"
-                            value={formData.officeAddress}
-                            onChange={(e) => updateFormData("officeAddress", e.target.value)}
-                            placeholder="Enter complete office address"
-                          />
+                        <div className="space-y-4">
+                          <label className="form-label font-bold text-sm" style={{ color: 'var(--bizdoc-green)' }}>
+                            Office Address *
+                          </label>
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                            <div>
+                              <label className="form-label text-xs">Building No. / House Name *</label>
+                              <input
+                                type="text"
+                                className="form-input"
+                                value={formData.officeAddress_building || ""}
+                                onChange={(e) => updateFormData("officeAddress_building", e.target.value)}
+                                placeholder="e.g. Plot 15, Suite 4"
+                              />
+                            </div>
+                            <div>
+                              <label className="form-label text-xs">Street Name *</label>
+                              <input
+                                type="text"
+                                className="form-input"
+                                value={formData.officeAddress_street || ""}
+                                onChange={(e) => updateFormData("officeAddress_street", e.target.value)}
+                                placeholder="e.g. Herbert Macaulay Way"
+                              />
+                            </div>
+                            <div>
+                              <label className="form-label text-xs">Local Government (LGA) *</label>
+                              <input
+                                type="text"
+                                className="form-input"
+                                value={formData.officeAddress_lga || ""}
+                                onChange={(e) => updateFormData("officeAddress_lga", e.target.value)}
+                                placeholder="e.g. Ikeja LGA"
+                              />
+                            </div>
+                            <div>
+                              <label className="form-label text-xs">State *</label>
+                              <select
+                                className="form-input h-10 py-2 border rounded-md"
+                                value={formData.officeAddress_state || ""}
+                                onChange={(e) => updateFormData("officeAddress_state", e.target.value)}
+                              >
+                                <option value="" disabled>Select State</option>
+                                {NIGERIAN_STATES.map((state) => (
+                                  <option key={state} value={state}>{state}</option>
+                                ))}
+                              </select>
+                            </div>
+                          </div>
                         </div>
                       </CardContent>
                     </Card>
@@ -732,19 +1290,59 @@ export default function BusinessRegistrationForm() {
                         <CardTitle className="section-title">Business Contact Information</CardTitle>
                       </CardHeader>
                       <CardContent className="space-y-4 sm:space-y-6">
-                        <div>
-                          <label className="form-label">Business Address</label>
-                          <input
-                            type="text"
-                            className="form-input"
-                            value={formData.businessAddress}
-                            onChange={(e) => updateFormData("businessAddress", e.target.value)}
-                            placeholder="Enter complete business address"
-                          />
+                        <div className="space-y-4">
+                          <label className="form-label font-bold text-sm" style={{ color: 'var(--bizdoc-green)' }}>
+                            Business Address *
+                          </label>
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                            <div>
+                              <label className="form-label text-xs">Building No. / House Name *</label>
+                              <input
+                                type="text"
+                                className="form-input"
+                                value={formData.businessAddress_building || ""}
+                                onChange={(e) => updateFormData("businessAddress_building", e.target.value)}
+                                placeholder="e.g. Plot 15, Suite 4"
+                              />
+                            </div>
+                            <div>
+                              <label className="form-label text-xs">Street Name *</label>
+                              <input
+                                type="text"
+                                className="form-input"
+                                value={formData.businessAddress_street || ""}
+                                onChange={(e) => updateFormData("businessAddress_street", e.target.value)}
+                                placeholder="e.g. Herbert Macaulay Way"
+                              />
+                            </div>
+                            <div>
+                              <label className="form-label text-xs">Local Government (LGA) *</label>
+                              <input
+                                type="text"
+                                className="form-input"
+                                value={formData.businessAddress_lga || ""}
+                                onChange={(e) => updateFormData("businessAddress_lga", e.target.value)}
+                                placeholder="e.g. Ikeja LGA"
+                              />
+                            </div>
+                            <div>
+                              <label className="form-label text-xs">State *</label>
+                              <select
+                                className="form-input h-10 py-2 border rounded-md"
+                                value={formData.businessAddress_state || ""}
+                                onChange={(e) => updateFormData("businessAddress_state", e.target.value)}
+                              >
+                                <option value="" disabled>Select State</option>
+                                {NIGERIAN_STATES.map((state) => (
+                                  <option key={state} value={state}>{state}</option>
+                                ))}
+                              </select>
+                            </div>
+                          </div>
                         </div>
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                           <div>
-                            <label className="form-label">Email Address</label>
+                            <label className="form-label">Email Address *</label>
                             <input
                               type="email"
                               className="form-input"
@@ -754,7 +1352,7 @@ export default function BusinessRegistrationForm() {
                             />
                           </div>
                           <div>
-                            <label className="form-label">Phone Number</label>
+                            <label className="form-label">Phone Number *</label>
                             <input
                               type="tel"
                               className="form-input"
@@ -834,7 +1432,7 @@ export default function BusinessRegistrationForm() {
                     </CardHeader>
                     <CardContent>
                       <div>
-                        <label className="form-label">Business Description</label>
+                        <label className="form-label">Business Description *</label>
                         <textarea
                           className="form-input resize-none"
                           rows={4}
@@ -878,7 +1476,7 @@ export default function BusinessRegistrationForm() {
                     title="Particulars of Directors"
                     type="director"
                     persons={formData.directors}
-                    onPersonsChange={(directors) => updateFormData("directors", directors)}
+                    onPersonsChange={handleDirectorsChange}
                     hidePassport={formData.registrationType === "company"}
                   />
 
@@ -1005,7 +1603,16 @@ export default function BusinessRegistrationForm() {
                           </div>
                           <div>
                             <span className="font-medium text-foreground">Office Address:</span>
-                            <p className="text-muted-foreground mt-1">{formData.officeAddress || "Not provided"}</p>
+                            <p className="text-muted-foreground mt-1">
+                              {(() => {
+                                const b = formData.officeAddress_building;
+                                const s = formData.officeAddress_street;
+                                const l = formData.officeAddress_lga;
+                                const st = formData.officeAddress_state;
+                                if (!b && !s && !l && !st) return "Not provided";
+                                return `${b}, ${s}, ${l} LGA, ${st} State`;
+                              })()}
+                            </p>
                           </div>
                           <div>
                             <span className="font-medium text-foreground">Contact Email:</span>
@@ -1048,7 +1655,16 @@ export default function BusinessRegistrationForm() {
                           </div>
                           <div>
                             <span className="font-medium text-foreground">Business Address:</span>
-                            <p className="text-muted-foreground mt-1">{formData.businessAddress || "Not provided"}</p>
+                            <p className="text-muted-foreground mt-1">
+                              {(() => {
+                                const b = formData.businessAddress_building;
+                                const s = formData.businessAddress_street;
+                                const l = formData.businessAddress_lga;
+                                const st = formData.businessAddress_state;
+                                if (!b && !s && !l && !st) return "Not provided";
+                                return `${b}, ${s}, ${l} LGA, ${st} State`;
+                              })()}
+                            </p>
                           </div>
                           <div>
                             <span className="font-medium text-foreground">Contact Email:</span>
@@ -1143,7 +1759,14 @@ export default function BusinessRegistrationForm() {
                                 <div className="lg:col-span-2">
                                   <span className="font-medium">Residential Address:</span>
                                   <p className="text-muted-foreground">
-                                    {proprietor.residentialAddress || "Not provided"}
+                                    {(() => {
+                                      const b = proprietor.residentialAddress_building;
+                                      const s = proprietor.residentialAddress_street;
+                                      const l = proprietor.residentialAddress_lga;
+                                      const st = proprietor.residentialAddress_state;
+                                      if (!b && !s && !l && !st) return "Not provided";
+                                      return `${b}, ${s}, ${l} LGA, ${st} State`;
+                                    })()}
                                   </p>
                                 </div>
                               </div>
@@ -1217,7 +1840,14 @@ export default function BusinessRegistrationForm() {
                                   <div className="lg:col-span-2">
                                     <span className="font-medium">Residential Address:</span>
                                     <p className="text-muted-foreground">
-                                      {director.residentialAddress || "Not provided"}
+                                      {(() => {
+                                        const b = director.residentialAddress_building;
+                                        const s = director.residentialAddress_street;
+                                        const l = director.residentialAddress_lga;
+                                        const st = director.residentialAddress_state;
+                                        if (!b && !s && !l && !st) return "Not provided";
+                                        return `${b}, ${s}, ${l} LGA, ${st} State`;
+                                      })()}
                                     </p>
                                   </div>
                                 </div>
@@ -1273,7 +1903,14 @@ export default function BusinessRegistrationForm() {
                                   <div className="lg:col-span-2">
                                     <span className="font-medium">Residential Address:</span>
                                     <p className="text-muted-foreground">
-                                      {shareholder.residentialAddress || "Not provided"}
+                                      {(() => {
+                                        const b = shareholder.residentialAddress_building;
+                                        const s = shareholder.residentialAddress_street;
+                                        const l = shareholder.residentialAddress_lga;
+                                        const st = shareholder.residentialAddress_state;
+                                        if (!b && !s && !l && !st) return "Not provided";
+                                        return `${b}, ${s}, ${l} LGA, ${st} State`;
+                                      })()}
                                     </p>
                                   </div>
                                 </div>
@@ -1326,7 +1963,14 @@ export default function BusinessRegistrationForm() {
                                 <div className="lg:col-span-2">
                                   <span className="font-medium">Residential Address:</span>
                                   <p className="text-muted-foreground">
-                                    {trustee.residentialAddress || "Not provided"}
+                                    {(() => {
+                                      const b = trustee.residentialAddress_building;
+                                      const s = trustee.residentialAddress_street;
+                                      const l = trustee.residentialAddress_lga;
+                                      const st = trustee.residentialAddress_state;
+                                      if (!b && !s && !l && !st) return "Not provided";
+                                      return `${b}, ${s}, ${l} LGA, ${st} State`;
+                                    })()}
                                   </p>
                                 </div>
                               </div>

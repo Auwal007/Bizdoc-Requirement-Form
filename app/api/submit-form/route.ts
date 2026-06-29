@@ -199,11 +199,19 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Process and encode files to Base64
+    // Process and encode files to Base64, skipping duplicates (same name and size)
     const fileList: GoogleFilePayload[] = []
+    const processedFiles = new Set<string>()
 
     for (const [key, value] of formData.entries()) {
       if (value instanceof File && value.size > 0) {
+        const fileFingerprint = `${value.name}-${value.size}`
+        if (processedFiles.has(fileFingerprint)) {
+          console.log(`[API] Skipping duplicate file upload for key ${key}: ${value.name}`)
+          continue
+        }
+        processedFiles.add(fileFingerprint)
+
         const buffer = Buffer.from(await value.arrayBuffer())
         const base64 = buffer.toString("base64")
         
