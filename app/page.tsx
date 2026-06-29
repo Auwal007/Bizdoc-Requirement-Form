@@ -1,6 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useSearchParams } from "next/navigation"
 import { Building2, Shield, ChevronRight, ChevronLeft, HelpCircle, X, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -65,6 +66,16 @@ export default function BusinessRegistrationForm() {
   const [showHelp, setShowHelp] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showSuccessModal, setShowSuccessModal] = useState(false)
+  const searchParams = useSearchParams()
+
+  // Auto-select registration type and skip landing page when a ?type= URL param is provided
+  useEffect(() => {
+    const type = searchParams.get("type")
+    if (type === "bn" || type === "company" || type === "trustees") {
+      setFormData((prev) => ({ ...prev, registrationType: type }))
+      setCurrentStep(1)
+    }
+  }, [searchParams])
   const [formData, setFormData] = useState<FormData>({
     registrationType: "",
     businessNameType: "sole",
