@@ -1810,7 +1810,7 @@ export default function BusinessRegistrationForm() {
                                   </div>
                                   <div>
                                     <span className="font-medium">Phone:</span>
-                                    <p className="text-muted-foreground">{director.phoneNumber || "Not provided"}</p>
+                                    <p className="text-muted-foreground">{director.phone || "Not provided"}</p>
                                   </div>
                                   <div>
                                     <span className="font-medium">Date of Birth:</span>
@@ -1828,6 +1828,28 @@ export default function BusinessRegistrationForm() {
                                         return `${b}, ${s}, ${l} LGA, ${st} State`;
                                       })()}
                                     </p>
+                                  </div>
+                                </div>
+                                {/* File Upload Information for Directors */}
+                                <div className="mt-4 pt-3 border-t border-muted">
+                                  <h5 className="font-medium text-foreground mb-2">Uploaded Documents</h5>
+                                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 text-sm">
+                                    <div>
+                                      <span className="font-medium">ID Card:</span>
+                                      <p className="text-muted-foreground">
+                                        {director.files?.idCard && director.files.idCard.length > 0
+                                          ? `${director.files.idCard.length} file(s) uploaded - ${director.files.idCard.map((f: any) => f.name).join(", ")}`
+                                          : "Not uploaded"}
+                                      </p>
+                                    </div>
+                                    <div>
+                                      <span className="font-medium">Sample Signature:</span>
+                                      <p className="text-muted-foreground">
+                                        {director.files?.signature && director.files.signature.length > 0
+                                          ? `${director.files.signature.length} file(s) uploaded - ${director.files.signature.map((f: any) => f.name).join(", ")}`
+                                          : "Not uploaded"}
+                                      </p>
+                                    </div>
                                   </div>
                                 </div>
                               </div>
@@ -1869,15 +1891,11 @@ export default function BusinessRegistrationForm() {
                                   </div>
                                   <div>
                                     <span className="font-medium">Phone:</span>
-                                    <p className="text-muted-foreground">{shareholder.phoneNumber || "Not provided"}</p>
-                                  </div>
-                                  <div>
-                                    <span className="font-medium">Date of Birth:</span>
-                                    <p className="text-muted-foreground">{shareholder.dateOfBirth || "Not provided"}</p>
+                                    <p className="text-muted-foreground">{shareholder.phone || "Not provided"}</p>
                                   </div>
                                   <div>
                                     <span className="font-medium">Shares:</span>
-                                    <p className="text-muted-foreground">{shareholder.shares || "Not specified"}</p>
+                                    <p className="text-muted-foreground">{shareholder.shareAllocation || "Not specified"}</p>
                                   </div>
                                   <div className="lg:col-span-2">
                                     <span className="font-medium">Residential Address:</span>
@@ -1891,6 +1909,28 @@ export default function BusinessRegistrationForm() {
                                         return `${b}, ${s}, ${l} LGA, ${st} State`;
                                       })()}
                                     </p>
+                                  </div>
+                                </div>
+                                {/* File Upload Information for Shareholders */}
+                                <div className="mt-4 pt-3 border-t border-muted">
+                                  <h5 className="font-medium text-foreground mb-2">Uploaded Documents</h5>
+                                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 text-sm">
+                                    <div>
+                                      <span className="font-medium">ID Card:</span>
+                                      <p className="text-muted-foreground">
+                                        {shareholder.files?.idCard && shareholder.files.idCard.length > 0
+                                          ? `${shareholder.files.idCard.length} file(s) uploaded - ${shareholder.files.idCard.map((f: any) => f.name).join(", ")}`
+                                          : "Not uploaded"}
+                                      </p>
+                                    </div>
+                                    <div>
+                                      <span className="font-medium">Sample Signature:</span>
+                                      <p className="text-muted-foreground">
+                                        {shareholder.files?.signature && shareholder.files.signature.length > 0
+                                          ? `${shareholder.files.signature.length} file(s) uploaded - ${shareholder.files.signature.map((f: any) => f.name).join(", ")}`
+                                          : "Not uploaded"}
+                                      </p>
+                                    </div>
                                   </div>
                                 </div>
                               </div>
@@ -1924,7 +1964,7 @@ export default function BusinessRegistrationForm() {
                                 <div>
                                   <span className="font-medium">Phone Number:</span>
                                   <p className="text-muted-foreground">
-                                    {trustee.phoneNumber || trustee.phone || "Not provided"}
+                                    {trustee.phone || "Not provided"}
                                   </p>
                                 </div>
                                 <div>
