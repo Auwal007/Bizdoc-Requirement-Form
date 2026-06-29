@@ -22,6 +22,7 @@
   --bizdoc-green-10:  rgba(27,77,62,0.08);  /* Tint for hover states */
   --bizdoc-green-20:  rgba(27,77,62,0.15);  /* Tint for active states */
   --bizdoc-gold-10:   rgba(180,140,76,0.10);
+  --bizdoc-border-input: #94A3B8;        /* Slate-400 for input field outline clarity */
 
   /* Shadcn/Tailwind token mapping */
   --background: 48 100% 97%;            /* Milk #FFFBEB */
@@ -40,7 +41,7 @@
   --accent-foreground: 48 100% 97%;
   --destructive: 0 72% 51%;
   --destructive-foreground: 0 0% 100%;
-  --border: 30 7% 89%;                 /* Hairline #E7E5E4 */
+  --border: 215 16% 65%;               /* Slate-400 #9CA3AF for clear visible borders */
   --input: 0 0% 100%;
   --ring: 160 48% 21%;
   --radius: 0.375rem;
@@ -190,7 +191,7 @@
   .form-input {
     width: 100%;
     padding: 10px 14px;
-    border: 1.5px solid var(--bizdoc-hairline);
+    border: 1.5px solid var(--bizdoc-border-input);
     border-radius: 6px;
     background-color: #ffffff;
     color: var(--bizdoc-charcoal);

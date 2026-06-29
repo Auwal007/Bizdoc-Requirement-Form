@@ -225,7 +225,7 @@ export function DynamicPersonForm({ title, type, persons, onPersonsChange, total
                     id={`isShareholder_${person.id}`}
                     checked={person.isShareholder || false}
                     onChange={(e) => updatePerson(person.id, "isShareholder", e.target.checked)}
-                    className="h-4 w-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer"
+                    className="h-4 w-4 rounded border-slate-400 text-emerald-600 focus:ring-emerald-500 cursor-pointer"
                   />
                   <label htmlFor={`isShareholder_${person.id}`} className="text-sm font-semibold text-slate-700 cursor-pointer select-none">
                     Is this director also a shareholder?
