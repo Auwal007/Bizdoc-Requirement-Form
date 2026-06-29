@@ -96,6 +96,9 @@ export async function POST(request: NextRequest) {
       totalShares: safeParseInt(formData.get("totalShares") as string),
       allotmentDetails: sanitizeInput(formData.get("allotmentDetails") as string),
       
+      // Additional notes from client
+      additionalNotes: sanitizeInput(formData.get("additionalNotes") as string),
+      
       // Trustees specific
       organizationName: sanitizeInput(formData.get("organizationName") as string),
       organizationEmail: sanitizeInput(formData.get("organizationEmail") as string),

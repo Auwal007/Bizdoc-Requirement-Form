@@ -44,6 +44,7 @@ interface FormData {
   organizationName: string
   organizationEmail: string
   organizationPhone: string
+  additionalNotes?: string
   
   // Split Office Address fields
   officeAddress: string
@@ -86,6 +87,7 @@ export default function BusinessRegistrationForm() {
     organizationName: "",
     organizationEmail: "",
     organizationPhone: "",
+    additionalNotes: "",
     officeAddress: "",
     officeAddress_building: "",
     officeAddress_street: "",
@@ -2031,6 +2033,24 @@ export default function BusinessRegistrationForm() {
                       )}
                     </div>
                   )}
+                  {/* Additional Notes / Instructions */}
+                  <Card className="card-enhanced">
+                    <CardHeader>
+                      <CardTitle className="section-title">Additional Notes</CardTitle>
+                      <p className="text-muted-foreground text-sm">
+                        Do you have any further notes, instructions, or information to share with our team?
+                      </p>
+                    </CardHeader>
+                    <CardContent>
+                      <textarea
+                        className="form-input resize-none"
+                        rows={4}
+                        value={formData.additionalNotes || ""}
+                        onChange={(e) => updateFormData("additionalNotes", e.target.value)}
+                        placeholder="Type any additional information or instructions here..."
+                      />
+                    </CardContent>
+                  </Card>
 
                   <div className="bg-secondary border border-primary/30 p-4 sm:p-6 rounded-lg">
                     <div className="flex items-start space-x-3">
@@ -2118,6 +2138,7 @@ export default function BusinessRegistrationForm() {
                       organizationName: "",
                       organizationEmail: "",
                       organizationPhone: "",
+                      additionalNotes: "",
                       officeAddress: "",
                       keyObjectives: "",
                       trusteeTenure: "",
