@@ -1,4 +1,5 @@
 "use client"
+import { useEffect } from "react"
 import { Plus, Trash2, Info } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -50,8 +51,13 @@ interface DynamicPersonFormProps {
 }
 
 export function DynamicPersonForm({ title, type, persons, onPersonsChange, totalShares, hidePassport, directors }: DynamicPersonFormProps) {
-  
-  const addPerson = () => {
+  useEffect(() => {
+    if (persons.length === 0) {
+      addPerson()
+    }
+  }, [persons.length])
+
+  function addPerson() {
     const newPerson: PersonData = {
       id: Date.now().toString(),
       fullName: "",
@@ -125,10 +131,12 @@ export function DynamicPersonForm({ title, type, persons, onPersonsChange, total
     <div className="space-y-4 sm:space-y-6">
       <div className="flex items-center justify-between">
         <h3 className="section-title">{title}</h3>
-        <Button type="button" onClick={addPerson} variant="outline" size="sm" className="px-4 py-2 bg-transparent">
-          <Plus className="h-4 w-4 mr-2" />
-          Add {getPersonTypeLabel()}
-        </Button>
+        {type !== "director" && (
+          <Button type="button" onClick={addPerson} variant="outline" size="sm" className="px-4 py-2 bg-transparent">
+            <Plus className="h-4 w-4 mr-2" />
+            Add {getPersonTypeLabel()}
+          </Button>
+        )}
       </div>
 
       {persons.map((person, index) => {
@@ -395,6 +403,20 @@ export function DynamicPersonForm({ title, type, persons, onPersonsChange, total
           </Card>
         )
       })}
+
+      {type === "director" && (
+        <div className="flex justify-end pt-1">
+          <Button
+            type="button"
+            onClick={addPerson}
+            variant="ghost"
+            size="sm"
+            className="text-xs text-muted-foreground hover:text-foreground underline decoration-dotted bg-transparent px-3 py-1.5 h-auto font-medium"
+          >
+            + Add another director
+          </Button>
+        </div>
+      )}
 
       {persons.length === 0 && (
         <Card className="card-enhanced">
